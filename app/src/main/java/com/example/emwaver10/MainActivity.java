@@ -7,13 +7,16 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.emwaver10.ui.terminal.TerminalViewModel;
 import com.example.emwaver10.ui.terminal.USBConnectionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -28,13 +31,16 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager;
 import java.io.IOException;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, SerialInputOutputManager.Listener {
+public class MainActivity extends AppCompatActivity implements SerialInputOutputManager.Listener {
 
     private ActivityMainBinding binding;
 
     private SerialInputOutputManager ioManager;
 
     private UsbSerialPort finalPort = null;
+
+    private TerminalViewModel terminalViewModel = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +49,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        //BottomNavigationView navView = findViewById(R.id.nav_view);
+        // Initialize ViewModel
+        terminalViewModel = new ViewModelProvider(this).get(TerminalViewModel.class);
+
+        terminalViewModel.getDataToSend().observe(this, data -> {
+            // This code will be executed when the data changes
+            Toast.makeText(MainActivity.this, "Received data: " + data, Toast.LENGTH_SHORT).show();
+            Log.i("debug", "received data"+ data);
+        });
+
 
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.navigation_terminal, R.id.navigation_packetmode, R.id.navigation_flash)
@@ -53,28 +67,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         NavigationUI.setupWithNavController(binding.navView, navController);
     }
 
-    @Override
-    public void onClick(View v) {
-        int id = v.getId();
-        USBConnectionManager connectionManager = new USBConnectionManager(this);
-        if (id == R.id.connectButton) {
-            try {
-                finalPort = connectionManager.connectUSBAndReturnPort();
-                if (finalPort != null) {
-                    Toast.makeText(this, "Driver: " + finalPort + " max pkt size: " + finalPort.getReadEndpoint().getMaxPacketSize(), Toast.LENGTH_LONG).show();
-                }
-                else{
-                    Toast.makeText(this, "No port available", Toast.LENGTH_LONG).show();
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+    public void onConnectClick(View view) throws IOException {
+        try {
+            finalPort = connectUSBAndReturnPort();
+            if (finalPort != null) {
+                Toast.makeText(this, "Driver: " + finalPort + " max pkt size: " + finalPort.getReadEndpoint().getMaxPacketSize(), Toast.LENGTH_LONG).show();
             }
+            else{
+                Toast.makeText(this, "No port available", Toast.LENGTH_LONG).show();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+        String userInput = "help";
+        byte[] byteArray = userInput.getBytes();
+        finalPort.write(byteArray, 2000);
     }
 
     @Override
     public void onNewData(byte[] data) {
-
+        Toast.makeText(this, "on new data", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -114,4 +126,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return port;
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i("MainActivity", "onResume: MainActivity is active");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Add a log statement to indicate that the MainActivity has stopped
+        Log.i("MainActivity", "onStop: MainActivity is no longer visible");
+    }
+
+
 }
