@@ -2,18 +2,27 @@ package com.example.emwaver10.ui.notifications;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 public class NotificationsViewModel extends ViewModel {
 
-    private final MutableLiveData<String> mText;
+    private final MutableLiveData<StringBuilder> mTextBuilder;
 
     public NotificationsViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("This is notifications fragment");
+        mTextBuilder = new MutableLiveData<>();
+        mTextBuilder.setValue(new StringBuilder("This is dfu fragment"));
     }
 
     public LiveData<String> getText() {
-        return mText;
+        return Transformations.map(mTextBuilder, StringBuilder::toString);
+    }
+
+    public void appendText(String text) {
+        StringBuilder currentBuilder = mTextBuilder.getValue();
+        if (currentBuilder != null) {
+            currentBuilder.append(text);
+            mTextBuilder.setValue(currentBuilder);
+        }
     }
 }
