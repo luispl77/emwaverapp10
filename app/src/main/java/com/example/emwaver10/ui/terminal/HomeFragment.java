@@ -119,26 +119,6 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Seri
         }
     }
 
-    @Override
-    public void onNewData(byte[] data) {
-        // Convert the data to a string, assuming UTF-8 encoding.
-        String dataString;
-        try {
-            dataString = new String(data, "UTF-8");
-            // Update the view model with the new data.
-            homeViewModel.appendData(dataString);
-
-            // Since Toasts need to be shown on the main thread, use getActivity().runOnUiThread()
-            getActivity().runOnUiThread(() -> {
-                Toast.makeText(getContext(), "New data received", Toast.LENGTH_SHORT).show();
-                // Update your UI elements here if necessary
-                textOutput.setText(dataString);
-            });
-        } catch (UnsupportedEncodingException e) {
-            // Handle the exception if UTF-8 encoding is not supported
-            e.printStackTrace();
-        }
-    }
 
 
 

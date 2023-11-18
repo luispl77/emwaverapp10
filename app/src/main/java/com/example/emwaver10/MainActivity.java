@@ -8,8 +8,10 @@ import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.emwaver10.ui.terminal.HomeViewModel;
 import com.example.emwaver10.ui.terminal.USBConnectionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -29,9 +31,9 @@ import java.io.IOException;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SerialInputOutputManager.Listener {
-
+    private HomeViewModel homeViewModel;
     private ActivityMainBinding binding;
-
+    private TextView textOutput;
     private SerialInputOutputManager ioManager;
 
     private UsbSerialPort finalPort = null;
@@ -53,7 +55,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(binding.navView, navController);
     }
+    @Override
 
+    public void onNewData(byte[] data) {
+        // Convert the data to a string, assuming UTF-8 encoding.
+        String dataString;
+        try {
+            dataString = new String(data, "UTF-8");
+            // Update the view model with the new data.
+            homeViewModel.appendData(dataString);
+
+            runOnUiThread(() -> {
+                Toast.makeText(MainActivity.this, "New data received", Toast.LENGTH_SHORT).show();
+
+                // Since Toasts need to be shown on the main thread, use
+
+                // Update your UI elements here if necessary
+                textOutput.setText(dataString);
+            });
+        } catch (UnsupportedEncodingException e) {
+            // Handle the exception if UTF-8 encoding is not supported
+            e.printStackTrace();
+        }
+    }
     @Override
     public void onClick(View v) {
         int id = v.getId();
@@ -73,10 +97,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    @Override
-    public void onNewData(byte[] data) {
-
-    }
 
     @Override
     public void onRunError(Exception e) {
