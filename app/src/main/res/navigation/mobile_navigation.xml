@@ -3,22 +3,22 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home">
+    app:startDestination="@+id/navigation_terminal">
 
     <fragment
-        android:id="@+id/navigation_home"
-        android:name="com.example.emwaver10.ui.terminal.HomeFragment"
+        android:id="@+id/navigation_terminal"
+        android:name="com.example.emwaver10.ui.terminal.TerminalFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_terminal" />
 
     <fragment
-        android:id="@+id/navigation_dashboard"
+        android:id="@+id/navigation_packetmode"
         android:name="com.example.emwaver10.ui.packetmode.PacketModeFragment"
         android:label="@string/title_dashboard"
         tools:layout="@layout/fragment_packet_mode" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
+        android:id="@+id/navigation_flash"
         android:name="com.example.emwaver10.ui.flash.FlashFragment"
         android:label="@string/title_notifications"
         tools:layout="@layout/fragment_flash" />

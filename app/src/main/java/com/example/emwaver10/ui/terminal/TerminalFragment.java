@@ -21,7 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.emwaver10.R;
-import com.example.emwaver10.databinding.FragmentHomeBinding;
+import com.example.emwaver10.databinding.FragmentTerminalBinding;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
@@ -32,19 +32,19 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 
-public class HomeFragment extends Fragment implements View.OnClickListener, SerialInputOutputManager.Listener{
-    private FragmentHomeBinding binding;
+public class TerminalFragment extends Fragment implements View.OnClickListener, SerialInputOutputManager.Listener{
+    private FragmentTerminalBinding binding;
     private EditText editTextInput;
     private TextView textOutput;
-    private HomeViewModel homeViewModel;
+    private TerminalViewModel terminalViewModel;
     private UsbSerialPort finalPort = null;
     private SerialInputOutputManager ioManager;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+        terminalViewModel = new ViewModelProvider(this).get(TerminalViewModel.class);
 
-        binding = FragmentHomeBinding.inflate(inflater, container, false);
+        binding = FragmentTerminalBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
         textOutput = binding.textOutput;
@@ -56,7 +56,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Seri
         connectButton.setOnClickListener(this);
 
         // Observe the LiveData and update the UI accordingly
-        homeViewModel.getTerminalData().observe(getViewLifecycleOwner(), text -> {
+        terminalViewModel.getTerminalData().observe(getViewLifecycleOwner(), text -> {
             textOutput.setText(text);
         });
 
@@ -82,7 +82,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Seri
                 }
 
                 // Update the view model with the user input
-                homeViewModel.appendData(userInput);
+                terminalViewModel.appendData(userInput);
 
                 // Clear the EditText after processing the input
                 editTextInput.setText("");
@@ -126,7 +126,7 @@ public class HomeFragment extends Fragment implements View.OnClickListener, Seri
         try {
             dataString = new String(data, "UTF-8");
             // Update the view model with the new data.
-            homeViewModel.appendData(dataString);
+            terminalViewModel.appendData(dataString);
 
             // Since Toasts need to be shown on the main thread, use getActivity().runOnUiThread()
             getActivity().runOnUiThread(() -> {

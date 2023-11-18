@@ -3,7 +3,7 @@ package com.example.emwaver10.ui.terminal;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class HomeViewModel  extends ViewModel  {
+public class TerminalViewModel extends ViewModel  {
     private final MutableLiveData<String> terminalData = new MutableLiveData<>();
 
     public MutableLiveData<String> getTerminalData() {
