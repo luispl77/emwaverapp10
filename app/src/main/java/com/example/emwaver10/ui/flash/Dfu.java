@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.example.emwaver10;
+package com.example.emwaver10.ui.flash;
 
-import android.content.Context;
 import android.util.Log;
-
-import com.example.emwaver10.ui.notifications.NotificationsFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,10 +86,10 @@ public class Dfu {
         void onStatusMsg(String msg);
     }
 
-    private NotificationsFragment context;
+    private FlashFragment context;
 
 
-    public Dfu(int usbVendorId, int usbProductId, NotificationsFragment context) {
+    public Dfu(int usbVendorId, int usbProductId, FlashFragment context) {
         this.deviceVid = usbVendorId;
         this.devicePid = usbProductId;
 

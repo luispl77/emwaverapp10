@@ -1,4 +1,4 @@
-package com.example.emwaver10.ui.home;
+package com.example.emwaver10.ui.terminal;
 
 import android.app.PendingIntent;
 import android.content.Context;

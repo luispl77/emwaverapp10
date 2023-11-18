@@ -1,4 +1,4 @@
-package com.example.emwaver10.ui.dashboard;
+package com.example.emwaver10.ui.packetmode;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,22 +10,22 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.emwaver10.databinding.FragmentDashboardBinding;
+import com.example.emwaver10.databinding.FragmentPacketModeBinding;
 
-public class DashboardFragment extends Fragment {
+public class PacketModeFragment extends Fragment {
 
-    private FragmentDashboardBinding binding;
+    private FragmentPacketModeBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        DashboardViewModel dashboardViewModel =
-                new ViewModelProvider(this).get(DashboardViewModel.class);
+        PacketModeViewModel PacketModeViewModel =
+                new ViewModelProvider(this).get(PacketModeViewModel.class);
 
-        binding = FragmentDashboardBinding.inflate(inflater, container, false);
+        binding = FragmentPacketModeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textDashboard;
-        dashboardViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        final TextView textView = binding.textPacketMode;
+        PacketModeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
         return root;
     }
 

@@ -1,6 +1,5 @@
-package com.example.emwaver10.ui.home;
+package com.example.emwaver10.ui.terminal;
 
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 

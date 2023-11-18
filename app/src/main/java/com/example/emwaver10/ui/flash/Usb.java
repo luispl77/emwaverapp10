@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.emwaver10;
+package com.example.emwaver10.ui.flash;
 
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;

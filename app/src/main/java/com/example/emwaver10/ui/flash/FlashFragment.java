@@ -1,4 +1,4 @@
-package com.example.emwaver10.ui.notifications;
+package com.example.emwaver10.ui.flash;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -12,19 +12,17 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.emwaver10.Dfu;
-import com.example.emwaver10.Usb;
-import com.example.emwaver10.databinding.FragmentNotificationsBinding;
+import com.example.emwaver10.databinding.FragmentFlashBinding;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class NotificationsFragment extends Fragment {
+public class FlashFragment extends Fragment {
 
-    private FragmentNotificationsBinding binding;
-    private NotificationsViewModel notificationsViewModel;
+    private FragmentFlashBinding binding;
+    private FlashViewModel notificationsViewModel;
 
     private Usb usb;
     private Dfu dfu;
@@ -32,8 +30,8 @@ public class NotificationsFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        notificationsViewModel = new ViewModelProvider(this).get(NotificationsViewModel.class);
-        binding = FragmentNotificationsBinding.inflate(inflater, container, false);
+        notificationsViewModel = new ViewModelProvider(this).get(FlashViewModel.class);
+        binding = FragmentFlashBinding.inflate(inflater, container, false);
 
         // Observe the LiveData from the ViewModel
         notificationsViewModel.getText().observe(getViewLifecycleOwner(), newText -> {

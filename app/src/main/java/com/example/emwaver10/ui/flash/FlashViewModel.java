@@ -1,15 +1,15 @@
-package com.example.emwaver10.ui.notifications;
+package com.example.emwaver10.ui.flash;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
-public class NotificationsViewModel extends ViewModel {
+public class FlashViewModel extends ViewModel {
 
     private final MutableLiveData<StringBuilder> mTextBuilder;
 
-    public NotificationsViewModel() {
+    public FlashViewModel() {
         mTextBuilder = new MutableLiveData<>();
         mTextBuilder.setValue(new StringBuilder("This is dfu fragment"));
     }
