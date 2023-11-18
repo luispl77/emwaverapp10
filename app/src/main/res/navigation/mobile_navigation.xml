@@ -13,7 +13,7 @@
 
     <fragment
         android:id="@+id/navigation_dashboard"
-        android:name="com.example.emwaver10.ui.packetmode.DashboardFragment"
+        android:name="com.example.emwaver10.ui.packetmode.PacketModeFragment"
         android:label="@string/title_dashboard"
         tools:layout="@layout/fragment_packet_mode" />
 
