@@ -2,6 +2,8 @@ package com.example.emwaver10.ui.flash;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class FlashFragment extends Fragment {
+public class FlashFragment extends Fragment implements Dfu.DfuListener, Handler.Callback, View.OnClickListener {
 
     private FragmentFlashBinding binding;
     private FlashViewModel notificationsViewModel;
@@ -132,5 +134,20 @@ public class FlashFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    @Override
+    public void onStatusMsg(String msg) {
+
+    }
+
+    @Override
+    public boolean handleMessage(@NonNull Message message) {
+        return false;
+    }
+
+    @Override
+    public void onClick(View view) {
+
     }
 }
