@@ -3,4 +3,6 @@
     <string name="title_home">Terminal</string>
     <string name="title_dashboard">Packet Mode</string>
     <string name="title_notifications">Flash</string>
+    <string name="connect">connect</string>
+    <string name="enter_command">Enter command...</string>
 </resources>
