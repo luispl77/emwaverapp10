@@ -30,13 +30,13 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textOutput"
+        android:id="@+id/terminalText"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="#000"
         android:scrollbars="vertical"
         android:textColor="#0F0"
-        app:layout_constraintBottom_toTopOf="@+id/editTextInput"
+        app:layout_constraintBottom_toTopOf="@+id/terminalTextInput"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -46,7 +46,7 @@
 
     <!-- User Input EditText -->
     <EditText
-        android:id="@+id/editTextInput"
+        android:id="@+id/terminalTextInput"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="@string/enter_command"

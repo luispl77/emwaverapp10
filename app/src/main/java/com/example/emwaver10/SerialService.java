@@ -11,7 +11,6 @@ import android.hardware.usb.UsbManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -35,24 +34,25 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     private final BroadcastReceiver connectReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (Constants.ACTION_CONNECT_USB.equals(intent.getAction())) {
-                try {
-                    onConnectClick();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    // Handle exception
-                }
-            } else if ("com.example.ACTION_SEND_DATA_TO_SERVICE".equals(intent.getAction())) {
-                String userInput = intent.getStringExtra("userInput");
-                // Process the received data
-                Log.i("ser", "service received data: " + userInput);
-                byte[] byteArray = userInput.getBytes();
-                try {
-                    finalPort.write(byteArray, 2000);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+        if (Constants.ACTION_CONNECT_USB.equals(intent.getAction())) {
+            // Connect serial device
+            try {
+                onConnectClick();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        } else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
+            String userInput = intent.getStringExtra("userInput");
+            // Send the received data over USB.
+            Log.i("ser", "service received data: " + userInput);
+            assert userInput != null;
+            byte[] byteArray = userInput.getBytes();
+            try {
+                finalPort.write(byteArray, 2000);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         }
     };
 
@@ -60,17 +60,18 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     public void onCreate() {
         super.onCreate();
         liveData = new MutableLiveData<>();
-
-        IntentFilter filter = new IntentFilter(Constants.ACTION_CONNECT_USB);
-        registerReceiver(connectReceiver, filter);
-        IntentFilter filterData = new IntentFilter("com.example.ACTION_SEND_DATA_TO_SERVICE");
-        registerReceiver(connectReceiver, filterData);
+        // Register receivers for listening for broadcasts from Terminal fragment.
+        IntentFilter filterConnectButton = new IntentFilter(Constants.ACTION_CONNECT_USB);
+        registerReceiver(connectReceiver, filterConnectButton); // Receiver for the connect button in terminal.
+        IntentFilter filterData = new IntentFilter(Constants.ACTION_SEND_DATA_TO_SERVICE);
+        registerReceiver(connectReceiver, filterData); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
+        // todo: fix the security warning about visibility of the broadcast receiver
     }
 
+    // Callback that runs when the service is started. Not useful for now.
+    // START_STICKY: If the service is killed by the system, recreate it, but do not redeliver the last intent. Instead, the system calls onStartCommand with a null intent, unless there are pending intents to start the service. This is suitable for services that are continually running in the background (like music playback) and that don't rely on the intent data.
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // Start your USB connection here
-        //connectUSBAndReturnPort();
         return START_STICKY;
     }
 
@@ -80,13 +81,14 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         return null;
     }
 
+    //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
     @Override
     public void onNewData(byte[] data) {
         // Update LiveData or send Broadcast
-        String dataString = new String(data); // Convert data to string or required format
+        String dataString = new String(data);
         liveData.postValue(dataString);
         // Or send a broadcast
-        Intent intent = new Intent("com.example.ACTION_USB_DATA");
+        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
         intent.putExtra("data", dataString);
         sendBroadcast(intent);
     }
@@ -96,6 +98,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
 
     }
 
+    //Finds the port in which the USB device is connected to. Connects to the driver and returns the port.
     public UsbSerialPort connectUSBAndReturnPort () throws IOException {
         UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
         List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
@@ -121,7 +124,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
 
         UsbSerialPort port = driver.getPorts().get(0); // Most devices have just one port (port 0)
         port.open(connection);
-        port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+        port.setParameters(Constants.USB_BAUD_RATE, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
 
         ioManager = new SerialInputOutputManager(port, this);
         ioManager.start();
@@ -129,8 +132,8 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         return port;
     }
 
+    //Called from the broadcast done in Terminal, when user clicks the connect button.
     public void onConnectClick() throws IOException {
-        Log.i("ser", "received click broadcast");
         try {
             finalPort = connectUSBAndReturnPort();
             if (finalPort != null) {
@@ -147,7 +150,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(connectReceiver);
+        unregisterReceiver(connectReceiver); //will this ever be destroyed? perhaps when app closes.
     }
 
 }
