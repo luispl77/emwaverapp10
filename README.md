@@ -13,9 +13,10 @@ It's in this fragment that the user connects the EMWaver device to the port.
 
 ### Packet Mode Fragment
 In this fragment the user can choose between Tx (Transmit) and Rx (Receive) modes of the radio.
-There are several configurations the user can choose for each mode:
 Packet structure:
 <img width="512" alt="image" src="https://github.com/luispl77/emwaverapp10/assets/81360502/6e1c6eef-08fa-4add-8e6f-4c9a68c90611">
+
+There are several configurations the user can choose for each mode:
 #### Common configurations
 - Receiver Channel Filter Bandwidth
 - Frequency Offset Compensation
