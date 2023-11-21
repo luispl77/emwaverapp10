@@ -34,25 +34,27 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     private final BroadcastReceiver connectReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-        if (Constants.ACTION_CONNECT_USB.equals(intent.getAction())) {
-            // Connect serial device
-            try {
-                onConnectClick();
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (Constants.ACTION_CONNECT_USB.equals(intent.getAction())) {
+                // Connect serial device
+                try {
+                    onConnectClick();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
+                String userInput = intent.getStringExtra("userInput");
+                // Send the received data over USB.
+                Log.i("ser", "service received data: " + userInput);
+                assert userInput != null;
+                byte[] byteArray = userInput.getBytes();
+                try {
+                    if(byteArray != null && finalPort != null)
+                        finalPort.write(byteArray, 2000);
+                } catch (IOException e) {
+                    Log.i("ser", "no port" + userInput);
+                    throw new RuntimeException(e);
+                }
             }
-        } else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
-            String userInput = intent.getStringExtra("userInput");
-            // Send the received data over USB.
-            Log.i("ser", "service received data: " + userInput);
-            assert userInput != null;
-            byte[] byteArray = userInput.getBytes();
-            try {
-                finalPort.write(byteArray, 2000);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
         }
     };
 
@@ -140,6 +142,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
                 Toast.makeText(this, "Driver: " + finalPort + " max pkt size: " + finalPort.getReadEndpoint().getMaxPacketSize(), Toast.LENGTH_LONG).show();
             }
             else{
+                //todo: fix error propagation for when finalPort is null, to avoid null pointer crashes
                 Toast.makeText(this, "No port available", Toast.LENGTH_LONG).show();
             }
         } catch (IOException e) {
