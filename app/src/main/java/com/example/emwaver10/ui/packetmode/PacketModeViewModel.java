@@ -10,7 +10,7 @@ public class PacketModeViewModel extends ViewModel {
 
     public PacketModeViewModel() {
         mText = new MutableLiveData<>();
-        mText.setValue("This is dashboard fragment");
+        mText.setValue("init");
     }
 
     public LiveData<String> getText() {
