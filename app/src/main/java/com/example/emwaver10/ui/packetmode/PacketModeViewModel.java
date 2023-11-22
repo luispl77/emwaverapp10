@@ -10,7 +10,7 @@ public class PacketModeViewModel extends ViewModel {
 
     public PacketModeViewModel() {
         mText = new MutableLiveData<>();
-        mText.setValue("init");
+        mText.setValue("receive mode");
     }
 
     public LiveData<String> getText() {

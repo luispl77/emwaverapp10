@@ -50,6 +50,9 @@ public class SerialService extends Service implements SerialInputOutputManager.L
                 try {
                     if(byteArray != null && finalPort != null)
                         finalPort.write(byteArray, 2000);
+                    else{
+                        Toast.makeText(context, "No devices found", Toast.LENGTH_SHORT).show();
+                    }
                 } catch (IOException e) {
                     Log.i("ser", "no port" + userInput);
                     throw new RuntimeException(e);
