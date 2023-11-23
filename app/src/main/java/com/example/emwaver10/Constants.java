@@ -7,6 +7,8 @@ public class Constants {
     // Action string for the broadcast when sending data (from terminal) to be transmitted over USB in SerialService
     public static final String ACTION_SEND_DATA_TO_SERVICE = "com.example.ACTION_SEND_DATA_TO_SERVICE";
 
+    public static final String ACTION_SEND_DATA_BYTES_TO_SERVICE = "com.example.ACTION_SEND_DATA_BYTES_TO_SERVICE";
+
     // Action string for the broadcast when data is received from USB
     public static final String ACTION_USB_DATA_RECEIVED = "com.example.ACTION_USB_DATA";
 

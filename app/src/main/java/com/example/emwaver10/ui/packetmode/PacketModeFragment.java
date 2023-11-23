@@ -20,6 +20,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.databinding.FragmentPacketModeBinding;
 
+import java.util.Arrays;
+
 public class PacketModeFragment extends Fragment {
 
     private FragmentPacketModeBinding binding;
@@ -38,7 +40,13 @@ public class PacketModeFragment extends Fragment {
         binding.sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sendReadCommandToCC1101();
+                //sendReadCommandToCC1101();
+                byte [] readBurst = {'<', 0x22, 3}; // read burst command
+                //byte [] readBurst = {'i', 'n', 'i', 't'}; // read burst command
+                Log.i("Byte Array btn", Arrays.toString(readBurst));
+                sendByteDataToService(readBurst);
+                //String command = "test01";
+                //sendDataToService(command);
             }
         });
 
@@ -102,22 +110,24 @@ public class PacketModeFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
             if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
                 String dataString = intent.getStringExtra("data");
-                // Process the dataString to convert it into a byte array
-                byte[] data = hexStringToByteArray(dataString);
+                if (dataString != null) {
+                    byte[] byteArray = dataString.getBytes();
+                    // Now byteArray contains the byte representation of the string
 
-                // Convert each byte to Hex and concatenate for logging
-                StringBuilder hexData = new StringBuilder();
-                for (byte b : data) {
-                    hexData.append(String.format("%02X ", b));
+                    Log.i("Received Data", dataString);
+                    // Optionally, you can log the byte array to see its contents
+                    Log.i("Byte Array", Arrays.toString(byteArray));
                 }
-
-                Log.i("Received Data", hexData.toString().trim()); // Log the data in Hex format
             }
         }
     };
 
     private byte[] hexStringToByteArray(String s) {
         int len = s.length();
+        // Adjust length if it's odd
+        if (len % 2 != 0) {
+            len -= 1;
+        }
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
@@ -126,9 +136,16 @@ public class PacketModeFragment extends Fragment {
         return data;
     }
 
+
     private void sendDataToService(String userInput) {
         Intent intent = new Intent(Constants.ACTION_SEND_DATA_TO_SERVICE);
         intent.putExtra("userInput", userInput);
+        requireActivity().sendBroadcast(intent);
+    }
+
+    private void sendByteDataToService(byte[] bytes) {
+        Intent intent = new Intent(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
+        intent.putExtra("bytes", bytes);
         requireActivity().sendBroadcast(intent);
     }
 
