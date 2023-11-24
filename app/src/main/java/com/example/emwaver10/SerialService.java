@@ -22,6 +22,7 @@ import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 public class SerialService extends Service implements SerialInputOutputManager.Listener {
@@ -50,8 +51,25 @@ public class SerialService extends Service implements SerialInputOutputManager.L
                 try {
                     if(byteArray != null && finalPort != null)
                         finalPort.write(byteArray, 2000);
+                    else{
+                        Toast.makeText(context, "No devices found", Toast.LENGTH_SHORT).show();
+                    }
                 } catch (IOException e) {
                     Log.i("ser", "no port" + userInput);
+                    throw new RuntimeException(e);
+                }
+            } else if (Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE.equals(intent.getAction())) {
+                byte [] bytes = intent.getByteArrayExtra("bytes");
+                Log.i("ser", "service received bytes data: " + Arrays.toString(bytes));
+                assert bytes != null;
+                try {
+                    if(bytes != null && finalPort != null)
+                        finalPort.write(bytes, 2000);
+                    else{
+                        Toast.makeText(context, "No devices found", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (IOException e) {
+                    Log.i("ser", "no port");
                     throw new RuntimeException(e);
                 }
             }
@@ -67,6 +85,8 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         registerReceiver(connectReceiver, filterConnectButton); // Receiver for the connect button in terminal.
         IntentFilter filterData = new IntentFilter(Constants.ACTION_SEND_DATA_TO_SERVICE);
         registerReceiver(connectReceiver, filterData); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
+        IntentFilter filterBytes = new IntentFilter(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
+        registerReceiver(connectReceiver, filterBytes); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
         // todo: fix the security warning about visibility of the broadcast receiver
     }
 
@@ -87,12 +107,16 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     @Override
     public void onNewData(byte[] data) {
         // Update LiveData or send Broadcast
+        Log.i("onNewData bytes: ", Arrays.toString(data));
         String dataString = new String(data);
         liveData.postValue(dataString);
         // Or send a broadcast
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
         intent.putExtra("data", dataString);
         sendBroadcast(intent);
+        Intent intentBytes = new Intent(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
+        intent.putExtra("bytes", data);
+        sendBroadcast(intentBytes);
     }
 
     @Override
