@@ -19,17 +19,21 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.databinding.FragmentPacketModeBinding;
+import com.example.emwaver10.ui.terminal.TerminalViewModel;
 
 import java.util.Arrays;
+import java.util.Queue;
 
 public class PacketModeFragment extends Fragment {
 
     private FragmentPacketModeBinding binding;
 
+    private PacketModeViewModel packetModeViewModel;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        PacketModeViewModel packetModeViewModel =
-                new ViewModelProvider(this).get(PacketModeViewModel.class);
+
+        packetModeViewModel = new ViewModelProvider(this).get(PacketModeViewModel.class);
 
         binding = FragmentPacketModeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
@@ -40,13 +44,9 @@ public class PacketModeFragment extends Fragment {
         binding.sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //sendReadCommandToCC1101();
                 byte [] readBurst = {'<', 0x22, 3}; // read burst command
-                //byte [] readBurst = {'i', 'n', 'i', 't'}; // read burst command
                 Log.i("Byte Array btn", Arrays.toString(readBurst));
                 sendByteDataToService(readBurst);
-                //String command = "test01";
-                //sendDataToService(command);
             }
         });
 
@@ -56,12 +56,29 @@ public class PacketModeFragment extends Fragment {
         return root;
     }
 
-    private void sendReadCommandToCC1101() {
-        byte addr = 0x20; // Starting address
-        byte len = 10;    // Number of bytes to read
+    private void sendCommandAndWaitForResponse(byte[] command) {
+        final int[] sizeBefore = new int[1];
+        packetModeViewModel.getResponseQueue().observe(getViewLifecycleOwner(), queue -> {
+            if (queue.size() > sizeBefore[0]) {
+                // Response has been received
+                //Byte response = queue.poll(); // or process the whole queue as needed
+                Log.i("Queue Contents", "queue size: " + queue.size() + "queue size before: " + sizeBefore[0]);
+                logQueueContents(queue);
+                // Handle the response
+            }
+        });
 
-        String command = "<" + String.format("%02X", addr) + String.format("%02X", len);
-        sendDataToService(command);
+        // Send command
+        sizeBefore[0] = packetModeViewModel.getResponseQueue().getValue().size();
+        sendByteDataToService(command);
+    }
+
+    private void logQueueContents(Queue<Byte> queue) {
+        StringBuilder sb = new StringBuilder();
+        for (Byte b : queue) {
+            sb.append(String.format("%02X ", b)); // Formatting each byte as Hex
+        }
+        Log.i("Queue Contents", sb.toString());
     }
 
 
@@ -119,6 +136,9 @@ public class PacketModeFragment extends Fragment {
                 if (bytes != null) {
                     // Optionally, you can log the byte array to see its contents
                     Log.i("service bytes", Arrays.toString(bytes));
+                    for (byte b : bytes) {
+                        packetModeViewModel.addResponseByte(b);
+                    }
                 }
             }
         }
@@ -139,7 +159,7 @@ public class PacketModeFragment extends Fragment {
 
     @Override
     public void onStop() {
-        requireActivity().unregisterReceiver(usbDataReceiver); //disable the routine for receiving data
+        requireActivity().unregisterReceiver(usbDataReceiver); //disable the routine for receiving data when we leave packet mode.
         super.onStop();
     }
 }
