@@ -68,7 +68,7 @@ public class PacketModeFragment extends Fragment {
             }
         });
 
-        // Send command
+        // Send commands
         sizeBefore[0] = packetModeViewModel.getResponseQueue().getValue().size();
         sendByteDataToService(command);
     }
