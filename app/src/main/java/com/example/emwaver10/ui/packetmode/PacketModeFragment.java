@@ -111,30 +111,18 @@ public class PacketModeFragment extends Fragment {
             if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
                 String dataString = intent.getStringExtra("data");
                 if (dataString != null) {
-                    byte[] byteArray = dataString.getBytes();
-                    // Now byteArray contains the byte representation of the string
-
-                    Log.i("Received Data", dataString);
+                    Log.i("service string", dataString);
+                }
+            }
+            else if (Constants.ACTION_USB_DATA_BYTES_RECEIVED.equals(intent.getAction())) {
+                byte [] bytes = intent.getByteArrayExtra("bytes");
+                if (bytes != null) {
                     // Optionally, you can log the byte array to see its contents
-                    Log.i("Byte Array", Arrays.toString(byteArray));
+                    Log.i("service bytes", Arrays.toString(bytes));
                 }
             }
         }
     };
-
-    private byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        // Adjust length if it's odd
-        if (len % 2 != 0) {
-            len -= 1;
-        }
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
-        }
-        return data;
-    }
 
 
     private void sendDataToService(String userInput) {
