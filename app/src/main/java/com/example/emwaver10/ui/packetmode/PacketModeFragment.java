@@ -30,6 +30,10 @@ public class PacketModeFragment extends Fragment {
 
     private PacketModeViewModel packetModeViewModel;
 
+    public interface ResponseHandler {
+        void onReceived(byte[] response);
+    }
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
@@ -45,8 +49,17 @@ public class PacketModeFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 byte [] readBurst = {'<', 0x22, 3}; // read burst command
-                Log.i("Byte Array btn", Arrays.toString(readBurst));
-                sendByteDataToService(readBurst);
+                //Log.i("Byte Array btn", Arrays.toString(readBurst));
+                //sendByteDataToService(readBurst);
+
+                sendCommandAndWaitForResponse(readBurst, 3, new ResponseHandler() {
+                    @Override
+                    public void onReceived(byte[] response) {
+                        // Process the response here
+                        // For example, update the UI or perform further actions
+                        Log.i("onReceived", Arrays.toString(response));
+                    }
+                });
             }
         });
 
@@ -56,22 +69,39 @@ public class PacketModeFragment extends Fragment {
         return root;
     }
 
-    private void sendCommandAndWaitForResponse(byte[] command) {
-        final int[] sizeBefore = new int[1];
+    private void sendCommandAndWaitForResponse(byte[] command, int expectedResponseSize, ResponseHandler responseHandler) {
         packetModeViewModel.getResponseQueue().observe(getViewLifecycleOwner(), queue -> {
-            if (queue.size() > sizeBefore[0]) {
-                // Response has been received
-                //Byte response = queue.poll(); // or process the whole queue as needed
-                Log.i("Queue Contents", "queue size: " + queue.size() + "queue size before: " + sizeBefore[0]);
+            if (queue.size() >= expectedResponseSize) {
+                byte[] response = new byte[expectedResponseSize];
+                for (int i = 0; i < expectedResponseSize; i++) {
+                    response[i] = queue.poll(); // Assuming the response size is known
+                }
+                Log.i("Queue Observer", "Response received");
                 logQueueContents(queue);
-                // Handle the response
+                responseHandler.onReceived(response); // Pass the response to the handler
             }
         });
-
-        // Send command
-        sizeBefore[0] = packetModeViewModel.getResponseQueue().getValue().size();
         sendByteDataToService(command);
     }
+
+    void sendNextCommand(byte[][] commands, int index) {
+        if (index >= commands.length) {
+            // All commands have been sent and processed
+            return;
+        }
+
+        sendCommandAndWaitForResponse(commands[index], 1, new ResponseHandler() {
+            @Override
+            public void onReceived(byte[] response) {
+                // Process the response
+
+                // Send the next command
+                sendNextCommand(commands, index + 1);
+            }
+        });
+    }
+
+
 
     private void logQueueContents(Queue<Byte> queue) {
         StringBuilder sb = new StringBuilder();
@@ -120,6 +150,8 @@ public class PacketModeFragment extends Fragment {
         // Register usbDataReceiver for listening to new data received on USB port
         IntentFilter filter = new IntentFilter(Constants.ACTION_USB_DATA_RECEIVED);
         requireActivity().registerReceiver(usbDataReceiver, filter); //todo: fix visibility of broadcast receivers
+        IntentFilter filterBytes = new IntentFilter(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
+        requireActivity().registerReceiver(usbDataReceiver, filterBytes); //todo: fix visibility of broadcast receivers
     }
 
     private final BroadcastReceiver usbDataReceiver = new BroadcastReceiver() {
@@ -133,9 +165,9 @@ public class PacketModeFragment extends Fragment {
             }
             else if (Constants.ACTION_USB_DATA_BYTES_RECEIVED.equals(intent.getAction())) {
                 byte [] bytes = intent.getByteArrayExtra("bytes");
+                Log.i("service bytes", Arrays.toString(bytes));
                 if (bytes != null) {
                     // Optionally, you can log the byte array to see its contents
-                    Log.i("service bytes", Arrays.toString(bytes));
                     for (byte b : bytes) {
                         packetModeViewModel.addResponseByte(b);
                     }

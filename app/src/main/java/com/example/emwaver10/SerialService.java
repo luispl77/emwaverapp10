@@ -115,7 +115,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         intent.putExtra("data", dataString);
         sendBroadcast(intent);
         Intent intentBytes = new Intent(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
-        intent.putExtra("bytes", data);
+        intentBytes.putExtra("bytes", data);
         sendBroadcast(intentBytes);
     }
 
