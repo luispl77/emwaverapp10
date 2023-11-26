@@ -1,16 +1,18 @@
 package com.example.emwaver10.ui.packetmode;
 
+import android.os.Bundle;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Bundle;
+
 import android.util.Log;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TableLayout;
-import android.widget.TableRow;
+
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -19,10 +21,11 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.databinding.FragmentPacketModeBinding;
-import com.example.emwaver10.ui.terminal.TerminalViewModel;
 
-import java.util.Arrays;
+import com.google.android.material.tabs.TabLayoutMediator;
+
 import java.util.Queue;
+import java.util.Arrays;
 
 public class PacketModeFragment extends Fragment {
 
@@ -41,19 +44,25 @@ public class PacketModeFragment extends Fragment {
         final TextView textView = binding.textPacketMode;
         packetModeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
-        binding.sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                byte [] readBurst = {'<', 0x22, 3}; // read burst command
-                Log.i("Byte Array btn", Arrays.toString(readBurst));
-                sendByteDataToService(readBurst);
-            }
-        });
-
-        // Initialize and populate the table
-        initializeAndPopulateTable();
+        configTabLayout();
 
         return root;
+    }
+
+    private void configTabLayout(){
+        ViewPagerAdapter adapter = new ViewPagerAdapter(requireActivity());
+        binding.viewPager2.setAdapter(adapter);
+
+        adapter.addFragment(new ReceiveFragment(), "RECEIVE");
+        adapter.addFragment(new TransmitFragment(), "TRANSMIT");
+
+        binding.viewPager2.setOffscreenPageLimit(adapter.getItemCount());
+
+        TabLayoutMediator mediator = new TabLayoutMediator(binding.tabLayout, binding.viewPager2, (tabLayout, position) -> {
+            tabLayout.setText(adapter.getTitle(position));
+        });
+
+        mediator.attach();
     }
 
     private void sendCommandAndWaitForResponse(byte[] command) {
@@ -79,33 +88,6 @@ public class PacketModeFragment extends Fragment {
             sb.append(String.format("%02X ", b)); // Formatting each byte as Hex
         }
         Log.i("Queue Contents", sb.toString());
-    }
-
-
-    private void initializeAndPopulateTable() {
-        TableLayout table = binding.tableLayout;
-
-        byte[] data = new byte[64];
-        for (int i = 0; i < 64; i++) {
-            data[i] = (byte) i;
-        }
-
-        int columns = 8; // Number of columns in the table
-
-        for (int i = 0; i < data.length; i++) {
-            if (i % columns == 0) {
-                TableRow row = new TableRow(getContext());
-                table.addView(row);
-            }
-
-            TextView textView = new TextView(getContext());
-            textView.setText(String.format("%02X", data[i])); // Format byte as Hex
-            textView.setPadding(5, 5, 5, 5);
-            // Additional formatting
-
-            TableRow currentRow = (TableRow) table.getChildAt(table.getChildCount() - 1);
-            currentRow.addView(textView);
-        }
     }
 
     @Override
@@ -143,7 +125,6 @@ public class PacketModeFragment extends Fragment {
             }
         }
     };
-
 
     private void sendDataToService(String userInput) {
         Intent intent = new Intent(Constants.ACTION_SEND_DATA_TO_SERVICE);
