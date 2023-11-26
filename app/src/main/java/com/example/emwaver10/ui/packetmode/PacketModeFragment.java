@@ -30,9 +30,7 @@ public class PacketModeFragment extends Fragment {
 
     private PacketModeViewModel packetModeViewModel;
 
-    public interface ResponseHandler {
-        void onReceived(byte[] response);
-    }
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -48,18 +46,14 @@ public class PacketModeFragment extends Fragment {
         binding.sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                byte [] readBurst = {'<', 0x22, 3}; // read burst command
-                //Log.i("Byte Array btn", Arrays.toString(readBurst));
-                //sendByteDataToService(readBurst);
-
-                sendCommandAndWaitForResponse(readBurst, 3, new ResponseHandler() {
-                    @Override
-                    public void onReceived(byte[] response) {
-                        // Process the response here
-                        // For example, update the UI or perform further actions
-                        Log.i("onReceived", Arrays.toString(response));
+                new Thread(() -> {
+                    byte[] command = {'<', 0x22, 3}; // Replace with your actual command
+                    byte[] response = sendCommandAndGetResponse(command, 3, 1, 1000);
+                    if (response != null) {
+                        Log.i("Command Response", Arrays.toString(response));
+                        // Additional processing of the response
                     }
-                });
+                }).start();
             }
         });
 
@@ -69,47 +63,32 @@ public class PacketModeFragment extends Fragment {
         return root;
     }
 
-    private void sendCommandAndWaitForResponse(byte[] command, int expectedResponseSize, ResponseHandler responseHandler) {
-        packetModeViewModel.getResponseQueue().observe(getViewLifecycleOwner(), queue -> {
-            if (queue.size() >= expectedResponseSize) {
-                byte[] response = new byte[expectedResponseSize];
-                for (int i = 0; i < expectedResponseSize; i++) {
-                    response[i] = queue.poll(); // Assuming the response size is known
-                }
-                Log.i("Queue Observer", "Response received");
-                logQueueContents(queue);
-                responseHandler.onReceived(response); // Pass the response to the handler
-            }
-        });
+    // send the command to the service and wait for the broadcast receiver to pick up the response and put in the Queue.
+    // this function should not be used in main thread since it can block it.
+    private byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
+        // Send the command
         sendByteDataToService(command);
-    }
 
-    void sendNextCommand(byte[][] commands, int index) {
-        if (index >= commands.length) {
-            // All commands have been sent and processed
-            return;
-        }
+        long startTime = System.currentTimeMillis(); // Start time for timeout
 
-        sendCommandAndWaitForResponse(commands[index], 1, new ResponseHandler() {
-            @Override
-            public void onReceived(byte[] response) {
-                // Process the response
-
-                // Send the next command
-                sendNextCommand(commands, index + 1);
+        // Wait for the response with timeout
+        while (packetModeViewModel.getResponseQueueSize() < expectedResponseSize) {
+            if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                Log.e("sendCmdGetResponse", "Timeout occurred");
+                return null; // Timeout occurred
             }
-        });
-    }
-
-
-
-    private void logQueueContents(Queue<Byte> queue) {
-        StringBuilder sb = new StringBuilder();
-        for (Byte b : queue) {
-            sb.append(String.format("%02X ", b)); // Formatting each byte as Hex
+            try {
+                Thread.sleep(busyDelay); // Wait for it to arrive
+                //todo: try using wait/notify mechanism to really avoid busy waiting
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                return null; // Return or handle the interruption as appropriate
+            }
         }
-        Log.i("Queue Contents", sb.toString());
+        // Retrieve the response
+        return packetModeViewModel.getAndClearResponse(expectedResponseSize);
     }
+
 
 
     private void initializeAndPopulateTable() {
