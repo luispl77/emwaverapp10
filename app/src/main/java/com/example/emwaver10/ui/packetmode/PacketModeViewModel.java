@@ -10,11 +10,13 @@ import androidx.lifecycle.ViewModel;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PacketModeViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
     private MutableLiveData<Queue<Byte>> responseQueueLiveData;
+    private Queue<Byte> responseQueue = new ConcurrentLinkedQueue<>();
 
     public PacketModeViewModel() {
         mText = new MutableLiveData<>();
@@ -38,7 +40,20 @@ public class PacketModeViewModel extends ViewModel {
         if (currentQueue != null) {
             currentQueue.add(responseByte);
             responseQueueLiveData.setValue(currentQueue); // Trigger LiveData update
+            responseQueue.add(responseByte);
         }
+    }
+    // Method to retrieve and clear data from the queue
+    public byte[] getAndClearResponse(int expectedSize) {
+        byte[] response = new byte[expectedSize];
+        for (int i = 0; i < expectedSize; i++) {
+            response[i] = responseQueue.poll(); // or handle nulls if necessary
+        }
+        return response;
+    }
+
+    public int getResponseQueueSize() {
+        return responseQueue.size();
     }
 
     public void clearResponseQueue() {

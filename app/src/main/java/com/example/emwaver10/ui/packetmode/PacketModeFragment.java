@@ -41,9 +41,6 @@ public class PacketModeFragment extends Fragment {
         binding = FragmentPacketModeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textPacketMode;
-        packetModeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
-
         configTabLayout();
 
         return root;
@@ -63,31 +60,6 @@ public class PacketModeFragment extends Fragment {
         });
 
         mediator.attach();
-    }
-
-    private void sendCommandAndWaitForResponse(byte[] command) {
-        final int[] sizeBefore = new int[1];
-        packetModeViewModel.getResponseQueue().observe(getViewLifecycleOwner(), queue -> {
-            if (queue.size() > sizeBefore[0]) {
-                // Response has been received
-                //Byte response = queue.poll(); // or process the whole queue as needed
-                Log.i("Queue Contents", "queue size: " + queue.size() + "queue size before: " + sizeBefore[0]);
-                logQueueContents(queue);
-                // Handle the response
-            }
-        });
-
-        // Send commands
-        sizeBefore[0] = packetModeViewModel.getResponseQueue().getValue().size();
-        sendByteDataToService(command);
-    }
-
-    private void logQueueContents(Queue<Byte> queue) {
-        StringBuilder sb = new StringBuilder();
-        for (Byte b : queue) {
-            sb.append(String.format("%02X ", b)); // Formatting each byte as Hex
-        }
-        Log.i("Queue Contents", sb.toString());
     }
 
     @Override
@@ -125,18 +97,6 @@ public class PacketModeFragment extends Fragment {
             }
         }
     };
-
-    private void sendDataToService(String userInput) {
-        Intent intent = new Intent(Constants.ACTION_SEND_DATA_TO_SERVICE);
-        intent.putExtra("userInput", userInput);
-        requireActivity().sendBroadcast(intent);
-    }
-
-    private void sendByteDataToService(byte[] bytes) {
-        Intent intent = new Intent(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
-        intent.putExtra("bytes", bytes);
-        requireActivity().sendBroadcast(intent);
-    }
 
     @Override
     public void onStop() {
