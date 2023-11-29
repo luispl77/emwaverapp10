@@ -1,5 +1,9 @@
 package com.example.emwaver10.ui.packetmode;
 
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.content.Intent;
@@ -32,7 +36,8 @@ public class ReceiveFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        packetModeViewModel = new ViewModelProvider(this).get(PacketModeViewModel.class);
+        packetModeViewModel = new ViewModelProvider(requireActivity()).get(PacketModeViewModel.class);
+
 
         binding = FragmentReceiveBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
@@ -44,13 +49,19 @@ public class ReceiveFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
-                    textView.setText("click");
+                    //textView.setText("click");
                     byte[] command = {'<', 0x22, 3}; // Replace with your actual command
                     byte[] response = sendCommandAndGetResponse(command, 3, 1, 1000);
                     if (response != null) {
                         Log.i("Command Response", Arrays.toString(response));
                         updateTableWithResponse(response);
-                        textView.setText("Bytes: " + Arrays.toString(response));
+                        // Run the UI update on the main thread
+                        Activity activity = getActivity();
+                        if (activity != null) {
+                            activity.runOnUiThread(() -> {
+                                textView.setText("Bytes: " + Arrays.toString(response));
+                            });
+                        }
                     }
 
                 }).start();
@@ -75,7 +86,7 @@ public class ReceiveFragment extends Fragment {
         while (packetModeViewModel.getResponseQueueSize() < expectedResponseSize) {
             if (System.currentTimeMillis() - startTime > timeoutMillis) {
                 Log.e("sendCmdGetResponse", "Timeout occurred");
-                Toast.makeText(getContext(), "timeout", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getContext(), "timeout", Toast.LENGTH_SHORT).show();
                 return null; // Timeout occurred
             }
             try {
@@ -150,5 +161,8 @@ public class ReceiveFragment extends Fragment {
             }
         });
     }
+
+
+
 
 }

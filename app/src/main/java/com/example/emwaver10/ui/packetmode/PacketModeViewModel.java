@@ -15,33 +15,21 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class PacketModeViewModel extends ViewModel {
 
     private final MutableLiveData<String> mText;
-    private MutableLiveData<Queue<Byte>> responseQueueLiveData;
+
     private Queue<Byte> responseQueue = new ConcurrentLinkedQueue<>();
 
     public PacketModeViewModel() {
         mText = new MutableLiveData<>();
         mText.setValue("receive mode");
 
-        responseQueueLiveData = new MutableLiveData<>();
-        responseQueueLiveData.setValue(new LinkedList<>());
     }
 
     public LiveData<String> getText() {
         return mText;
     }
 
-    //queue for storing the latest responses
-    public LiveData<Queue<Byte>> getResponseQueue() {
-        return responseQueueLiveData;
-    }
-
     public void addResponseByte(Byte responseByte) {
-        Queue<Byte> currentQueue = responseQueueLiveData.getValue();
-        if (currentQueue != null) {
-            currentQueue.add(responseByte);
-            responseQueueLiveData.setValue(currentQueue); // Trigger LiveData update
-            responseQueue.add(responseByte);
-        }
+        responseQueue.add(responseByte);
     }
     // Method to retrieve and clear data from the queue
     public byte[] getAndClearResponse(int expectedSize) {
@@ -56,11 +44,4 @@ public class PacketModeViewModel extends ViewModel {
         return responseQueue.size();
     }
 
-    public void clearResponseQueue() {
-        Queue<Byte> currentQueue = responseQueueLiveData.getValue();
-        if (currentQueue != null) {
-            currentQueue.clear();
-            responseQueueLiveData.setValue(currentQueue); // Trigger LiveData update
-        }
-    }
 }
