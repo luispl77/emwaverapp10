@@ -8,6 +8,10 @@
     <string name="clear">clear</string>
     <string name="receive_tab">Receive</string>
     <string name="transmit_tab">Transmit</string>
+    <string-array name="modulations">
+        <item>ASK</item>
+        <item>FSK</item>
+    </string-array>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
