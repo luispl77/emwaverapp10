@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.example.emwaver10.Constants;
@@ -22,6 +23,7 @@ import com.example.emwaver10.databinding.FragmentReceiveBinding;
 import com.example.emwaver10.databinding.FragmentTransmitBinding;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class TransmitFragment extends Fragment {
 
@@ -61,6 +63,10 @@ public class TransmitFragment extends Fragment {
                 }).start();
             }
         });
+
+        String[] modulations = getResources().getStringArray(R.array.modulations);
+        ArrayAdapter arrayAdapter = new ArrayAdapter(requireContext(), R.layout.dropdown_item, modulations);
+        binding.autoCompleteTextView.setAdapter(arrayAdapter);
 
         return root;
 
