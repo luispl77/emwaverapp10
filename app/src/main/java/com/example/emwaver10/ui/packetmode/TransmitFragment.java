@@ -47,8 +47,10 @@ public class TransmitFragment extends Fragment {
             public void onClick(View v) {
                 new Thread(() -> {
                     //textView.setText("click");
-                    byte[] command = {'<', 0x22, 3}; // Replace with your actual command
-                    byte[] response = sendCommandAndGetResponse(command, 3, 1, 1000);
+                    /*byte[] command = {'t', 'x', 'i', 'n', 'i', 't'}; // Replace with your actual command
+                    String responseString = "Transmit init done\n";
+                    int length = responseString.length();
+                    byte[] response = sendCommandAndGetResponse(command, length, 1, 1000);
                     if (response != null) {
                         Log.i("Command Response", Arrays.toString(response));
                         // Run the UI update on the main thread
@@ -58,7 +60,20 @@ public class TransmitFragment extends Fragment {
                                 textView.setText("sent");
                             });
                         }
-                    }
+                    }*/
+
+                    //byte CC1101_SIDLE = 0x36;
+                    //spiStrobe(CC1101_SIDLE);
+
+
+                    byte [] teslaSignal = {50, -52, -52, -53, 77, 45, 74, -45, 76, -85, 75, 21, -106, 101, -103, -103, -106, -102, 90, -107, -90, -103, 86, -106, 43, 44, -53, 51, 51, 45, 52, -75, 43, 77, 50, -83, 40};
+
+                    sendData(teslaSignal, teslaSignal.length, 300);
+
+
+
+
+
 
                 }).start();
             }
@@ -78,14 +93,14 @@ public class TransmitFragment extends Fragment {
             if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
                 String dataString = intent.getStringExtra("data");
                 if (dataString != null) {
-                    Log.i("ser string", dataString);
+                    //Log.i("ser string", dataString);
                 }
             }
             else if (Constants.ACTION_USB_DATA_BYTES_RECEIVED.equals(intent.getAction())) {
                 byte [] bytes = intent.getByteArrayExtra("bytes");
                 if (bytes != null) {
                     // Optionally, you can log the byte array to see its contents
-                    Log.i("service bytes", Arrays.toString(bytes));
+                    //Log.i("service bytes", Arrays.toString(bytes));
                     for (byte b : bytes) {
                         packetModeViewModel.addResponseByte(b);
                     }
@@ -149,5 +164,56 @@ public class TransmitFragment extends Fragment {
         // Retrieve the response
         return packetModeViewModel.getAndClearResponse(expectedResponseSize);
     }
+
+
+    private void spiStrobe(byte commandStrobe){
+        byte [] command = new byte[2];
+        byte [] response = new byte[1];
+        command[0] = '%'; //command strobe character
+        command[1] = commandStrobe;
+        response = sendCommandAndGetResponse(command, 1, 1, 1000);
+        Log.i("spiStrobe", Arrays.toString(response));
+    }
+
+    private void writeBurstReg(byte addr, byte [] data, byte len){
+        byte [] command = new byte[data.length+3];
+        byte [] response = new byte[1];
+        command[0] = '>'; //write burst reg character
+        command[1] = addr; //burst write >[addr][len][data]
+        command[2] = len;
+        System.arraycopy(data, 0, command, 3, data.length); // Efficient array copy
+        response = sendCommandAndGetResponse(command, 1, 1, 1000);
+        Log.i("writeBurstReg", Arrays.toString(response));
+    }
+
+
+    private void sendData(byte [] txBuffer, int size, int t) {
+        byte CC1101_TXFIFO = 0x3F;
+        byte CC1101_SIDLE = 0x36;
+        byte CC1101_STX = 0x35;
+        byte CC1101_SFTX = 0x3B;
+        writeBurstReg(CC1101_TXFIFO, txBuffer, (byte) size);     //write data to send
+        spiStrobe(CC1101_SIDLE);
+        spiStrobe(CC1101_STX);                          //start send
+        try {
+            Thread.sleep(t);                                //wait for transmission to be done
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        spiStrobe(CC1101_SFTX);                         //flush TXfifo
+    }
+
+
+    public byte[] intArrayToByteArray(int[] intArray) {
+        byte[] byteArray = new byte[intArray.length];
+
+        for (int i = 0; i < intArray.length; i++) {
+            byteArray[i] = (byte) intArray[i]; // Cast each int to a byte
+        }
+
+        return byteArray;
+    }
+
+
 }
 

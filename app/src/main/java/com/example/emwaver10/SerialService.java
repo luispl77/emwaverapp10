@@ -45,7 +45,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
             } else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
                 String userInput = intent.getStringExtra("userInput");
                 // Send the received data over USB.
-                Log.i("ser", "service received data: " + userInput);
+                //Log.i("ser", "service received data: " + userInput);
                 assert userInput != null;
                 byte[] byteArray = userInput.getBytes();
                 try {
@@ -60,7 +60,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
                 }
             } else if (Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE.equals(intent.getAction())) {
                 byte [] bytes = intent.getByteArrayExtra("bytes");
-                Log.i("ser", "service received bytes data: " + Arrays.toString(bytes));
+                //Log.i("ser", "service received bytes data: " + Arrays.toString(bytes));
                 assert bytes != null;
                 try {
                     if(bytes != null && finalPort != null)
@@ -107,7 +107,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     @Override
     public void onNewData(byte[] data) {
         // Update LiveData or send Broadcast
-        Log.i("onNewData bytes: ", Arrays.toString(data));
+        //Log.i("onNewData bytes: ", Arrays.toString(data));
         String dataString = new String(data);
         liveData.postValue(dataString);
         // Or send a broadcast
