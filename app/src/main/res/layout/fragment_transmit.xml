@@ -7,15 +7,7 @@
     tools:context=".ui.packetmode.TransmitFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:id="@+id/txtViewTransmit"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="140dp"
-        android:text="@string/transmit_tab"
-        android:gravity="center"
-        android:textColor="@color/black"
-        android:textSize="30sp"/>
+
 
     <Button
         android:id="@+id/sendButtonTransmit"
@@ -23,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="124dp"
         android:layout_gravity="center"
-        android:text="send"
+        android:text="send tesla"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
@@ -45,17 +37,18 @@
             android:id="@+id/bitrateTextInputEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Insert the bitrate"/>
+            android:hint="Insert the bitrate"
+            android:inputType="number"/>  <!-- Set inputType to number -->
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
-        android:id="@+id/button1"
+        android:id="@+id/setDataRateButton"
         android:layout_width="114dp"
         android:layout_height="56dp"
         android:layout_marginStart="267dp"
         android:layout_marginTop="39.5dp"
         android:layout_marginEnd="40dp"
-        android:text="Button1" />
+        android:text="set datarate" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -100,12 +93,18 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/sendPayloadButton"
         android:layout_width="114dp"
         android:layout_height="55dp"
         android:layout_marginStart="267dp"
         android:layout_marginTop="210dp"
         android:layout_marginEnd="40dp"
-        android:text="Button2"/>
+        android:text="SEND PAYLOAD"/>
+
+    <Button
+        android:id="@+id/initTransmitButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="init transmit" />
 
 </FrameLayout>

@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.R;
@@ -39,42 +40,55 @@ public class TransmitFragment extends Fragment {
         binding = FragmentTransmitBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.txtViewTransmit;
-        packetModeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
         binding.sendButtonTransmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
-                    //textView.setText("click");
-                    /*byte[] command = {'t', 'x', 'i', 'n', 'i', 't'}; // Replace with your actual command
-                    String responseString = "Transmit init done\n";
-                    int length = responseString.length();
-                    byte[] response = sendCommandAndGetResponse(command, length, 1, 1000);
-                    if (response != null) {
-                        Log.i("Command Response", Arrays.toString(response));
-                        // Run the UI update on the main thread
-                        Activity activity = getActivity();
-                        if (activity != null) {
-                            activity.runOnUiThread(() -> {
-                                textView.setText("sent");
-                            });
-                        }
-                    }*/
-
-                    //byte CC1101_SIDLE = 0x36;
-                    //spiStrobe(CC1101_SIDLE);
-
-
                     byte [] teslaSignal = {50, -52, -52, -53, 77, 45, 74, -45, 76, -85, 75, 21, -106, 101, -103, -103, -106, -102, 90, -107, -90, -103, 86, -106, 43, 44, -53, 51, 51, 45, 52, -75, 43, 77, 50, -83, 40};
+                    //sendData(teslaSignal, teslaSignal.length, 300);
+                    writeReg((byte)0x10, (byte)0x69);
+                    byte reading = readReg((byte)0x10);
+                    Log.i("reading", "" + reading);
+                }).start();
+            }
+        });
 
-                    sendData(teslaSignal, teslaSignal.length, 300);
+        binding.setDataRateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(() -> {
+                    if(setDataRate(2500)){
 
+                        showToastOnUiThread("Data rate set successfully");
+                    }
+                    else{
 
+                        showToastOnUiThread("Error setting data rate");
 
+                    }
+                }).start();
+            }
+        });
+        binding.initTransmitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(() -> {
+                    sendInit();
+                }).start();
+            }
+        });
 
+        // Set an OnClickListener for the button
+        binding.sendPayloadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String payload = binding.payloadTextInputEditText.getText().toString();
+                Log.i("Payload", payload);
+                byte [] payload_bytes = convertHexStringToByteArray(payload);
 
-
+                new Thread(() -> {
+                    sendData(payload_bytes, payload_bytes.length, 300);
                 }).start();
             }
         });
@@ -175,7 +189,7 @@ public class TransmitFragment extends Fragment {
         Log.i("spiStrobe", Arrays.toString(response));
     }
 
-    private void writeBurstReg(byte addr, byte [] data, byte len){
+    private void writeBurstReg(byte addr, byte[] data, byte len){
         byte [] command = new byte[data.length+3];
         byte [] response = new byte[1];
         command[0] = '>'; //write burst reg character
@@ -184,6 +198,37 @@ public class TransmitFragment extends Fragment {
         System.arraycopy(data, 0, command, 3, data.length); // Efficient array copy
         response = sendCommandAndGetResponse(command, 1, 1, 1000);
         Log.i("writeBurstReg", Arrays.toString(response));
+    }
+
+    private byte [] readBurstReg(byte addr, int len){
+        byte [] command = new byte[3];
+        byte [] response = new byte[len];
+        command[0] = '<'; //read burst reg character
+        command[1] = addr; ////burst read <[addr][len]
+        command[2] = (byte)len;
+        response = sendCommandAndGetResponse(command, (byte)len, 1, 1000);
+        Log.i("readBurstReg", Arrays.toString(response));
+        return response;
+    }
+
+    private byte readReg(byte addr){
+        byte [] command = new byte[2];
+        byte [] response = new byte[1];
+        command[0] = '?'; //read reg character
+        command[1] = addr; //single read ?[addr]
+        response = sendCommandAndGetResponse(command, (byte)1, 1, 1000);
+        Log.i("readReg", Arrays.toString(response));
+        return response[0];
+    }
+
+    private void writeReg(byte addr, byte data){
+        byte [] command = new byte[3];
+        byte [] response = new byte[1];
+        command[0] = '!'; //write reg character
+        command[1] = addr; //single write ![addr][data]
+        command[2] = data;
+        response = sendCommandAndGetResponse(command, 1, 1, 1000);
+        Log.i("writeReg", Arrays.toString(response));
     }
 
 
@@ -203,15 +248,102 @@ public class TransmitFragment extends Fragment {
         spiStrobe(CC1101_SFTX);                         //flush TXfifo
     }
 
+    public void sendInit(){
+            byte[] command = {'t', 'x', 'i', 'n', 'i', 't'}; // Replace with your actual command
+            String responseString = "Transmit init done\n";
+            int length = responseString.length();
+            byte[] response = sendCommandAndGetResponse(command, length, 1, 1000);
+            if (response != null) {
+                Log.i("Command Response", Arrays.toString(response));
+            }
+    }
 
-    public byte[] intArrayToByteArray(int[] intArray) {
-        byte[] byteArray = new byte[intArray.length];
 
-        for (int i = 0; i < intArray.length; i++) {
-            byteArray[i] = (byte) intArray[i]; // Cast each int to a byte
+    public byte[] convertHexStringToByteArray(String hexString) {
+        // Remove any non-hex characters (like spaces) if present
+        hexString = hexString.replaceAll("[^0-9A-Fa-f]", "");
+
+        // Check if the string has an even number of characters
+        if (hexString.length() % 2 != 0) {
+            Log.e("Hex Conversion", "Invalid hex string");
+            return null; // Return null or throw an exception as appropriate
         }
 
-        return byteArray;
+        byte[] bytes = new byte[hexString.length() / 2];
+
+        StringBuilder hex_string = new StringBuilder();
+
+        for (int i = 0; i < bytes.length; i++) {
+            int index = i * 2;
+            int value = Integer.parseInt(hexString.substring(index, index + 2), 16);
+            bytes[i] = (byte) value;
+            hex_string.append(String.format("%02X ", bytes[i]));
+        }
+
+        Log.i("Payload bytes", hex_string.toString());
+
+        return bytes;
+    }
+
+
+    public boolean setDataRate(int bitRate) {
+        // Constants for the DRATE register calculation
+        final double F_OSC = 26_000_000; // Oscillator frequency in Hz
+        final int DRATE_M_MAX = 255; // 8-bit DRATE_M has max value 255
+        final int DRATE_E_MAX = 15;  // 4-bit DRATE_E has max value 15
+        double target = bitRate * Math.pow(2, 28) / F_OSC;
+        double minDifference = Double.MAX_VALUE;
+        int bestM = 0;
+        int bestE = 0;
+
+        // Find the closest DRATE_M and DRATE_E for the desired bit rate
+        for (int e = 0; e <= DRATE_E_MAX; e++) {
+            for (int m = 0; m <= DRATE_M_MAX; m++) {
+                double currentValue = (256 + m) * Math.pow(2, e);
+                double difference = Math.abs(currentValue - target);
+                if (difference < minDifference) {
+                    minDifference = difference;
+                    bestM = m;
+                    bestE = e;
+                }
+            }
+        }
+
+        // Log the values found
+        Log.i("ModemConfig", "DRATE_M: " + bestM + ", DRATE_E: " + bestE);
+
+        // Read the current value of the MDMCFG4 register to keep the first word
+        int CC1101_MDMCFG4 = 0x10;
+        byte[] readValue = readBurstReg((byte)CC1101_MDMCFG4, 2);
+        Log.i("ModemConfig", "CC1101_MDMCFG4: " + readValue[0] + ", CC1101_MDMCFG3: " + readValue[1]);
+        int firstWord = readValue[0] & 0xF0; // Ensure it is treated as unsigned
+
+        // Combine the read first word with the calculated DRATE_M
+        int combinedE = firstWord | (bestE & 0x0F); // Assumes the first word is the high byte
+
+        // Log the values found
+        Log.i("ModemConfig", "DRATE_M: " + bestM + ", DRATE_E: " + combinedE);
+
+        // Write the combined value and DRATE_E to the modem configuration registers
+        byte[] mdmcfg = {(byte) combinedE, (byte) bestM};
+        writeBurstReg((byte) CC1101_MDMCFG4, mdmcfg, (byte) 2);
+
+        //confirm reading
+        readValue = readBurstReg((byte)CC1101_MDMCFG4, 2);
+        Log.i("ModemConfig", "CC1101_MDMCFG4: " + (int)readValue[0] + ", CC1101_MDMCFG3: " + (int)readValue[1]);
+        if(Arrays.equals(readValue, mdmcfg)){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    public void showToastOnUiThread(final String message) {
+        if (isAdded()) { // Check if Fragment is currently added to its activity
+            getActivity().runOnUiThread(() ->
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show());
+        }
     }
 
 
