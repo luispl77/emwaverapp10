@@ -71,40 +71,10 @@ public class PacketModeFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        // Register usbDataReceiver for listening to new data received on USB port
-        //IntentFilter filter = new IntentFilter(Constants.ACTION_USB_DATA_RECEIVED);
-        //requireActivity().registerReceiver(usbDataReceiver, filter); //todo: fix visibility of broadcast receivers
-
-        //IntentFilter filterBytes = new IntentFilter(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
-        //requireActivity().registerReceiver(usbDataReceiver, filterBytes);
     }
-
-    private final BroadcastReceiver usbDataReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
-                String dataString = intent.getStringExtra("data");
-                if (dataString != null) {
-                    Log.i("ser string", dataString);
-                }
-            }
-            else if (Constants.ACTION_USB_DATA_BYTES_RECEIVED.equals(intent.getAction())) {
-                byte [] bytes = intent.getByteArrayExtra("bytes");
-                if (bytes != null) {
-                    // Optionally, you can log the byte array to see its contents
-                    Log.i("ser bytes", Arrays.toString(bytes));
-                    for (byte b : bytes) {
-                        packetModeViewModel.addResponseByte(b);
-                    }
-                    Log.i("queue size", "" + packetModeViewModel.getResponseQueueSize());
-                }
-            }
-        }
-    };
 
     @Override
     public void onStop() {
-        //requireActivity().unregisterReceiver(usbDataReceiver); //disable the routine for receiving data when we leave packet mode.
         super.onStop();
     }
 }
