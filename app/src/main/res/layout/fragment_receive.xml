@@ -25,27 +25,22 @@
         android:stretchColumns="*" />
 
     <Button
-        android:id="@+id/sendButton"
+        android:id="@+id/receiveDataButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="124dp"
         android:layout_gravity="center"
-        android:text="send"
+        android:layout_marginTop="124dp"
+        android:text="receive"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-
     <Button
-        android:id="@+id/getStatusButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="172dp"
-        android:layout_gravity="center"
-        android:text="num rx bytes"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:id="@+id/receiveInitButton"
+        android:layout_width="155dp"
+        android:layout_height="88dp"
+        android:text="Button" />
+
 
 </FrameLayout>

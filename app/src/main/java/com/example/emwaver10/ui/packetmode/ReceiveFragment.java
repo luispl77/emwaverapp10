@@ -21,16 +21,20 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.emwaver10.CC1101;
+import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.databinding.FragmentReceiveBinding;
 
 import java.util.Arrays;
 
-public class ReceiveFragment extends Fragment {
+public class ReceiveFragment extends Fragment implements CommandSender {
 
     private FragmentReceiveBinding binding;
 
     private PacketModeViewModel packetModeViewModel;
+
+    private CC1101 cc;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -38,6 +42,7 @@ public class ReceiveFragment extends Fragment {
 
         packetModeViewModel = new ViewModelProvider(requireActivity()).get(PacketModeViewModel.class);
 
+        cc = new CC1101(this);
 
         binding = FragmentReceiveBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
@@ -45,25 +50,22 @@ public class ReceiveFragment extends Fragment {
         final TextView textView = binding.textReceive;
         packetModeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
-        binding.sendButton.setOnClickListener(new View.OnClickListener() {
+        binding.receiveDataButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
-                    //textView.setText("click");
-                    byte[] command = {'<', 0x22, 3}; // Replace with your actual command
-                    byte[] response = sendCommandAndGetResponse(command, 3, 1, 1000);
-                    if (response != null) {
-                        Log.i("Command Response", Arrays.toString(response));
-                        updateTableWithResponse(response);
-                        // Run the UI update on the main thread
-                        Activity activity = getActivity();
-                        if (activity != null) {
-                            activity.runOnUiThread(() -> {
-                                textView.setText("Bytes: " + Arrays.toString(response));
-                            });
-                        }
-                    }
+                    byte [] receivedBytes = cc.receiveData();
+                    Log.i("Received", cc.toHexStringWithHexPrefix(receivedBytes));
+                    updateTableWithResponse(receivedBytes);
+                }).start();
+            }
+        });
 
+        binding.receiveInitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(() -> {
+                    cc.sendInitRx();
                 }).start();
             }
         });
@@ -76,7 +78,8 @@ public class ReceiveFragment extends Fragment {
 
     // send the command to the service and wait for the broadcast receiver to pick up the response and put in the Queue.
     // this function should not be used in main thread since it can block it.
-    private byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
+    @Override
+    public byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
         // Send the command
         sendByteDataToService(command);
 
@@ -111,6 +114,47 @@ public class ReceiveFragment extends Fragment {
         Intent intent = new Intent(Constants.ACTION_SEND_DATA_TO_SERVICE);
         intent.putExtra("userInput", userInput);
         requireActivity().sendBroadcast(intent);
+    }
+
+    private final BroadcastReceiver usbDataReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
+                String dataString = intent.getStringExtra("data");
+                if (dataString != null) {
+                    //Log.i("ser string", dataString);
+                }
+            }
+            else if (Constants.ACTION_USB_DATA_BYTES_RECEIVED.equals(intent.getAction())) {
+                byte [] bytes = intent.getByteArrayExtra("bytes");
+                if (bytes != null) {
+                    // Optionally, you can log the byte array to see its contents
+                    //Log.i("service bytes", Arrays.toString(bytes));
+                    for (byte b : bytes) {
+                        packetModeViewModel.addResponseByte(b);
+                    }
+                }
+            }
+        }
+    };
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Register BroadcastReceiver here
+        // Register usbDataReceiver for listening to new data received on USB port
+        IntentFilter filter = new IntentFilter(Constants.ACTION_USB_DATA_RECEIVED);
+        requireActivity().registerReceiver(usbDataReceiver, filter); //todo: fix visibility of broadcast receivers
+
+        IntentFilter filterBytes = new IntentFilter(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
+        requireActivity().registerReceiver(usbDataReceiver, filterBytes);
+    }
+
+    @Override
+    public void onPause() {
+        // Unregister BroadcastReceiver here
+        super.onPause();
+        requireActivity().unregisterReceiver(usbDataReceiver); //disable the routine for receiving data when we leave packet mode.
     }
 
     private void initializeAndPopulateTable() {

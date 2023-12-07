@@ -92,9 +92,7 @@ public class CC1101 {
     public static final byte CC1101_PKTSTATUS = 0x38;    // Current GDOx status and packet status
     public static final byte CC1101_VCO_VC_DAC = 0x39;   // Current setting from PLL calibration module
     public static final byte CC1101_TXBYTES = 0x3A;      // Underflow and number of bytes in the TX FIFO
-
-    public static final byte CC1101_TXuint8_tS = 0x3A;
-    public static final byte CC1101_RXuint8_tS = 0x3B;
+    public static final byte CC1101_RXBYTES = 0x3B;
 
     //CC1101 PATABLE,TXFIFO,RXFIFO
     public static final byte CC1101_PATABLE = 0x3E;
@@ -107,6 +105,11 @@ public class CC1101 {
     public static final byte MOD_ASK = 3;
     public static final byte MOD_4FSK = 4;
     public static final byte MOD_MSK = 7;
+
+    public static final byte WRITE_BURST = (byte)0x40;
+    public static final byte READ_SINGLE = (byte)0x80;
+    public static final byte READ_BURST = (byte)0xC0;
+    public static final byte BYTES_IN_RXFIFO = 0x7F;            //byte number in RXfifo mask
 
 
     public CC1101(CommandSender commandSender) {
@@ -177,9 +180,39 @@ public class CC1101 {
         spiStrobe(CC1101_SFTX);                         //flush TXfifo
     }
 
+    public byte [] receiveData() {
+        byte size_reading;
+        byte [] rxBuffer;
+        size_reading = readReg((byte)(CC1101_RXBYTES | READ_BURST));
+
+        if((size_reading & BYTES_IN_RXFIFO) > 0) {
+            rxBuffer = readBurstReg(CC1101_RXFIFO, size_reading);
+            spiStrobe(CC1101_SFRX);
+            spiStrobe(CC1101_SRX);
+            return rxBuffer;
+        }
+        else {
+            spiStrobe(CC1101_SFRX);
+            spiStrobe(CC1101_SRX);
+            return null;
+        }
+    }
+
+
+
     public void sendInit(){
         byte[] command = {'t', 'x', 'i', 'n', 'i', 't'}; // Replace with your actual command
         String responseString = "Transmit init done\n";
+        int length = responseString.length();
+        byte[] response = commandSender.sendCommandAndGetResponse(command, length, 1, 1000);
+        if (response != null) {
+            Log.i("Command Response", Arrays.toString(response));
+        }
+    }
+
+    public void sendInitRx(){
+        byte[] command = {'r', 'x', 'i', 'n', 'i', 't'}; // Replace with your actual command
+        String responseString = "Receive init done\n";
         int length = responseString.length();
         byte[] response = commandSender.sendCommandAndGetResponse(command, length, 1, 1000);
         if (response != null) {
