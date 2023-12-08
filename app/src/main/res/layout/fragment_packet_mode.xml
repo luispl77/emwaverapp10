@@ -30,26 +30,49 @@
         android:id="@+id/modulationSelector"
         android:layout_width="100dp"
         android:layout_height="48dp"
+        android:layout_marginStart="10dp"
         android:focusable="false"
         android:focusableInTouchMode="false"
         android:hint="Modulation"
-        app:layout_constraintEnd_toStartOf="@+id/datarateTextInput"
         app:layout_constraintStart_toEndOf="@+id/manchesterSwitch"
         app:layout_constraintTop_toBottomOf="@+id/sendTesla" />
+
+    <AutoCompleteTextView
+        android:id="@+id/preambleSelector"
+        android:layout_width="100dp"
+        android:layout_height="48dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:hint="Preamble"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/modulationSelector"
+        app:layout_constraintTop_toBottomOf="@+id/initTransmitButton" />
 
 
     <EditText
         android:id="@+id/datarateTextInput"
         android:layout_width="161dp"
         android:layout_height="48dp"
-        android:background="#EEE"
         android:hint="Enter data rate..."
         android:imeOptions="actionDone"
         android:inputType="number"
         android:padding="8dp"
         android:textColor="#000"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/manchesterSwitch" />
+
+    <EditText
+        android:id="@+id/syncwordTextInput"
+        android:layout_width="161dp"
+        android:layout_height="48dp"
+        android:hint="Enter sync word..."
+        android:imeOptions="actionDone"
+        android:inputType="number"
+        android:padding="8dp"
+        android:textColor="#000"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/initTransmitButton" />
+        app:layout_constraintStart_toEndOf="@+id/datarateTextInput"
+        app:layout_constraintTop_toBottomOf="@+id/preambleSelector" />
 
     <Button
         android:id="@+id/sendPayloadButton"
@@ -101,7 +124,7 @@
         android:textColor="#000"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/modulationSelector" />
+        app:layout_constraintTop_toBottomOf="@+id/datarateTextInput" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

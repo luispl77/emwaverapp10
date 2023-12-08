@@ -106,6 +106,35 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             return false;
         });
 
+        binding.datarateTextInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                new Thread(() -> {
+                    String hexInput = binding.datarateTextInput.getText().toString().trim();
+                    // Check if the input is a 4-character hex string
+                    if (hexInput.length() != 4) {
+                        showToastOnUiThread("Input must be a 4-character hex value");
+                        return;
+                    }
+                    // Convert hex string to byte array
+                    byte[] syncWord = cc.convertHexStringToByteArray(hexInput);
+                    if (syncWord == null) {
+                        showToastOnUiThread("Invalid hex input");
+                        return;
+                    }
+                    // Set the sync word
+                    if (cc.setSyncWord(syncWord)) {
+                        showToastOnUiThread("Sync word set successfully to " + hexInput);
+                    } else {
+                        showToastOnUiThread("Error setting Sync word");
+                    }
+                }).start();
+            }
+            return false;
+        });
+
+
+
+
         binding.initTransmitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -132,7 +161,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             public void onClick(View v) {
                 String payload = binding.payloadDataTextInput.getText().toString();
                 Log.i("Payload", payload);
-                byte [] payload_bytes = convertHexStringToByteArray(payload);
+                byte [] payload_bytes = cc.convertHexStringToByteArray(payload);
 
                 new Thread(() -> {
                     cc.sendData(payload_bytes, payload_bytes.length, 300);
@@ -150,14 +179,16 @@ public class PacketModeFragment extends Fragment implements CommandSender {
                         return;
                     }
                     Log.i("Received", cc.toHexStringWithHexPrefix(receivedBytes));
-                    updatePayloadText(receivedBytes);
+                    String hexString = cc.bytesToHexString(receivedBytes);
+                    getActivity().runOnUiThread(() ->
+                            binding.payloadDataTextInput.setText(hexString));
                 }).start();
             }
         });
 
         String[] modulations = getResources().getStringArray(R.array.modulations);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, modulations);
-        binding.modulationSelector.setAdapter(arrayAdapter);
+        ArrayAdapter<String> modulationsAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, modulations);
+        binding.modulationSelector.setAdapter(modulationsAdapter);
         binding.modulationSelector.setOnClickListener(v -> binding.modulationSelector.showDropDown());
 
         binding.modulationSelector.setOnItemClickListener((parent, view, position, id) -> {
@@ -182,14 +213,25 @@ public class PacketModeFragment extends Fragment implements CommandSender {
         });
 
 
-        return root;
-    }
 
-    private void updatePayloadText(byte[] receivedBytes) {
-        String hexString = cc.bytesToHexString(receivedBytes);
-        // Assuming you are using view binding and the name of your binding class is YourActivityBinding
-        getActivity().runOnUiThread(() ->
-            binding.payloadDataTextInput.setText(hexString));
+        String[] preambles = getResources().getStringArray(R.array.preambles);
+        ArrayAdapter<String> preamblesAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, preambles);
+        binding.preambleSelector.setAdapter(preamblesAdapter);
+        binding.preambleSelector.setOnClickListener(v -> binding.preambleSelector.showDropDown());
+
+        binding.preambleSelector.setOnItemClickListener((parent, view, position, id) -> {
+            new Thread(() -> {
+                // Handle the selection based on index
+                if(cc.setNumPreambleBytes(position)) {
+                    showToastOnUiThread("Preamble set successfully to index " + position);
+                } else {
+                    showToastOnUiThread("Failed to set preamble");
+                }
+            }).start();
+        });
+
+
+        return root;
     }
 
 
@@ -255,32 +297,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
         }
     };
 
-    public byte[] convertHexStringToByteArray(String hexString) {
-        // Remove any non-hex characters (like spaces) if present
-        hexString = hexString.replaceAll("[^0-9A-Fa-f]", "");
-        Log.i("Hex Conversion", hexString);
 
-        // Check if the string has an even number of characters
-        if (hexString.length() % 2 != 0) {
-            Log.e("Hex Conversion", "Invalid hex string");
-            return null; // Return null or throw an exception as appropriate
-        }
-
-        byte[] bytes = new byte[hexString.length() / 2];
-
-        StringBuilder hex_string = new StringBuilder();
-
-        for (int i = 0; i < bytes.length; i++) {
-            int index = i * 2;
-            int value = Integer.parseInt(hexString.substring(index, index + 2), 16);
-            bytes[i] = (byte) value;
-            hex_string.append(String.format("%02X ", bytes[i]));
-        }
-
-        Log.i("Payload bytes", hex_string.toString());
-
-        return bytes;
-    }
 
 
     public void showToastOnUiThread(final String message) {

@@ -332,6 +332,22 @@ public class CC1101 {
         return readReg(CC1101_MDMCFG1) == mdmcfg1;
     }
 
+    public boolean setSyncWord(byte[] syncword) {
+        if (syncword == null || syncword.length != 2) {
+            // Invalid input: Sync word must be exactly 2 bytes long
+            return false;
+        }
+        // Write the sync word to the CC1101_SYNC1 address
+        writeBurstReg(CC1101_SYNC1, syncword, (byte) 2);
+
+        // Read back the sync word from the same address
+        byte[] readBack = readBurstReg(CC1101_SYNC1, 2);
+
+        // Compare the written sync word with the read back value
+        return Arrays.equals(syncword, readBack);
+    }
+
+
     public String bytesToHexString(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {
@@ -342,6 +358,33 @@ public class CC1101 {
             hexString.append(hex);
         }
         return hexString.toString();
+    }
+
+    public byte[] convertHexStringToByteArray(String hexString) {
+        // Remove any non-hex characters (like spaces) if present
+        hexString = hexString.replaceAll("[^0-9A-Fa-f]", "");
+        Log.i("Hex Conversion", hexString);
+
+        // Check if the string has an even number of characters
+        if (hexString.length() % 2 != 0) {
+            Log.e("Hex Conversion", "Invalid hex string");
+            return null; // Return null or throw an exception as appropriate
+        }
+
+        byte[] bytes = new byte[hexString.length() / 2];
+
+        StringBuilder hex_string = new StringBuilder();
+
+        for (int i = 0; i < bytes.length; i++) {
+            int index = i * 2;
+            int value = Integer.parseInt(hexString.substring(index, index + 2), 16);
+            bytes[i] = (byte) value;
+            hex_string.append(String.format("%02X ", bytes[i]));
+        }
+
+        Log.i("Payload bytes", hex_string.toString());
+
+        return bytes;
     }
 
 
