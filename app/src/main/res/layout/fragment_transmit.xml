@@ -1,73 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.packetmode.TransmitFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-
-
     <Button
         android:id="@+id/sendButtonTransmit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="124dp"
-        android:layout_gravity="center"
         android:text="send tesla"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.1"/>
+
+    <Switch
+        android:id="@+id/manchesterSwitch"
+        android:layout_width="92dp"
+        android:layout_height="68dp"
+        android:textOff="No Manchester"
+        android:textOn="Manchester"
+        app:layout_constraintTop_toBottomOf="@+id/sendButtonTransmit"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.05" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:id="@+id/bitrateTextInputLayout"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="150dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/manchesterSwitch"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView">
+        app:layout_constraintEnd_toStartOf="@+id/setDataRateButton"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintWidth_default="wrap">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/bitrateTextInputEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="146dp"
+            android:layout_height="72dp"
             android:hint="Insert the bitrate"
-            android:inputType="number"/>  <!-- Set inputType to number -->
+            android:inputType="number" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
         android:id="@+id/setDataRateButton"
         android:layout_width="114dp"
         android:layout_height="56dp"
-        android:layout_marginStart="267dp"
-        android:layout_marginTop="39.5dp"
-        android:layout_marginEnd="40dp"
-        android:text="set datarate" />
+        android:text="set datarate"
+        app:layout_constraintTop_toBottomOf="@+id/manchesterSwitch"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/bitrateTextInputLayout"
+        app:layout_constraintHorizontal_bias="0.5" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-        android:id="@+id/modulationTextInpuLayout"
-        android:layout_width="match_parent"
+        android:id="@+id/modulationTextInputLayout"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="120dp"
-        android:layout_marginEnd="32dp"
-        android:hint="Modulation"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bitrateTextInputLayout"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView">
+        app:layout_constraintEnd_toEndOf="parent"
+        android:hint="Modulation">
 
         <AutoCompleteTextView
             android:id="@+id/autoCompleteTextView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:inputType="none"
             android:textColorHint="@drawable/hint_selector"
             android:text="Choose the modulation" />
@@ -76,35 +78,39 @@
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:id="@+id/payloadTextInputLayout"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="210dp"
-        android:layout_marginEnd="150dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/modulationTextInputLayout"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView">
+        app:layout_constraintEnd_toStartOf="@+id/sendPayloadButton"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintWidth_default="wrap">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/payloadTextInputEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Insert the payload"/>
+            android:layout_width="132dp"
+            android:layout_height="82dp"
+            android:hint="Insert the payload" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
         android:id="@+id/sendPayloadButton"
         android:layout_width="114dp"
         android:layout_height="55dp"
-        android:layout_marginStart="267dp"
-        android:layout_marginTop="210dp"
-        android:layout_marginEnd="40dp"
-        android:text="SEND PAYLOAD"/>
+        android:text="SEND PAYLOAD"
+        app:layout_constraintTop_toBottomOf="@+id/modulationTextInputLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/payloadTextInputLayout"
+        app:layout_constraintHorizontal_bias="0.5" />
 
     <Button
         android:id="@+id/initTransmitButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="init transmit" />
+        android:text="init transmit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.9" />
 
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

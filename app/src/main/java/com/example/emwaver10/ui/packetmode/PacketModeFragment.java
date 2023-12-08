@@ -66,15 +66,18 @@ public class PacketModeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+        Log.i("onDestroy", "on start");
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        Log.i("onStart", "on start");
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        Log.i("onStop", "on stop");
     }
 }

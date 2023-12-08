@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.view.inputmethod.EditorInfo;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -70,6 +71,24 @@ public class ReceiveFragment extends Fragment implements CommandSender {
             }
         });
 
+        binding.preambleTextInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                String numberString = binding.preambleTextInput.getText().toString();
+                int num = Integer.parseInt(numberString);
+                Log.i("Preamble", numberString + ": " + num);
+                new Thread(() -> {
+                    if(cc.setNumPreambleBytes(num)){
+                        showToastOnUiThread("Num of preable bytes set successfully: " + num);
+                    }
+                    else{
+                        showToastOnUiThread("Error setting number of preamble bytes: " + num);
+                    }
+
+                }).start();
+            }
+            return false;
+        });
+
         // Initialize and populate the table
         initializeAndPopulateTable();
 
@@ -84,9 +103,10 @@ public class ReceiveFragment extends Fragment implements CommandSender {
         sendByteDataToService(command);
 
         long startTime = System.currentTimeMillis(); // Start time for timeout
-
+        Log.i("Queue Size", ""+packetModeViewModel.getResponseQueueSize());
         // Wait for the response with timeout
         while (packetModeViewModel.getResponseQueueSize() < expectedResponseSize) {
+
             if (System.currentTimeMillis() - startTime > timeoutMillis) {
                 Log.e("sendCmdGetResponse", "Timeout occurred");
                 //Toast.makeText(getContext(), "timeout", Toast.LENGTH_SHORT).show();
@@ -148,6 +168,7 @@ public class ReceiveFragment extends Fragment implements CommandSender {
 
         IntentFilter filterBytes = new IntentFilter(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
         requireActivity().registerReceiver(usbDataReceiver, filterBytes);
+        Log.i("Broadcast", "onResume");
     }
 
     @Override
@@ -155,7 +176,22 @@ public class ReceiveFragment extends Fragment implements CommandSender {
         // Unregister BroadcastReceiver here
         super.onPause();
         requireActivity().unregisterReceiver(usbDataReceiver); //disable the routine for receiving data when we leave packet mode.
+        Log.i("Broadcast", "broadcast receiver unregistered");
     }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (hidden) {
+            // Fragment is no longer visible
+            requireActivity().unregisterReceiver(usbDataReceiver);
+            Log.i("Broadcast", "broadcast receiver unregistered");
+        } else {
+            // Fragment is visible
+        }
+    }
+
+
 
     private void initializeAndPopulateTable() {
         TableLayout table = binding.tableLayout;
@@ -204,6 +240,40 @@ public class ReceiveFragment extends Fragment implements CommandSender {
                 currentRow.addView(textView);
             }
         });
+    }
+
+    public byte[] convertHexStringToByteArray(String hexString) {
+        // Remove any non-hex characters (like spaces) if present
+        hexString = hexString.replaceAll("[^0-9A-Fa-f]", "");
+
+        // Check if the string has an even number of characters
+        if (hexString.length() % 2 != 0) {
+            Log.e("Hex Conversion", "Invalid hex string");
+            return null; // Return null or throw an exception as appropriate
+        }
+
+        byte[] bytes = new byte[hexString.length() / 2];
+
+        StringBuilder hex_string = new StringBuilder();
+
+        for (int i = 0; i < bytes.length; i++) {
+            int index = i * 2;
+            int value = Integer.parseInt(hexString.substring(index, index + 2), 16);
+            bytes[i] = (byte) value;
+            hex_string.append(String.format("%02X ", bytes[i]));
+        }
+
+        Log.i("Payload bytes", hex_string.toString());
+
+        return bytes;
+    }
+
+
+    public void showToastOnUiThread(final String message) {
+        if (isAdded()) { // Check if Fragment is currently added to its activity
+            getActivity().runOnUiThread(() ->
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show());
+        }
     }
 
 

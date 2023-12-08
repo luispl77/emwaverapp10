@@ -248,8 +248,8 @@ public class CC1101 {
         Log.i("DataRate", toHexStringWithHexPrefix(values));
 
         // Read the current value of the MDMCFG4 register to keep the first word
-        byte[] readValue = readBurstReg((byte)CC1101_MDMCFG4, 2);
-        int bandwidthPart = readValue[0] & 0xF0; // Ensure it is treated as unsigned
+        byte readValue = readReg(CC1101_MDMCFG4);
+        int bandwidthPart = readValue & 0xF0; // Ensure it is treated as unsigned
 
         // Combine the read first word with the calculated DRATE_M
         int combinedE = bandwidthPart | (bestE & 0x0F); // Assumes the first word is the high byte
@@ -260,9 +260,9 @@ public class CC1101 {
 
 
         //confirm reading
-        readValue = readBurstReg((byte)CC1101_MDMCFG4, 2);
+        byte [] confirmValue = readBurstReg((byte)CC1101_MDMCFG4, 2);
         //Log.i("ModemConfig", "CC1101_MDMCFG4: " + (int)readValue[0] + ", CC1101_MDMCFG3: " + (int)readValue[1]);
-        if(Arrays.equals(readValue, mdmcfg)){
+        if(Arrays.equals(confirmValue, mdmcfg)){
             return true;
         }
         else{
@@ -308,6 +308,28 @@ public class CC1101 {
         }
         hexString.append("]");
         return hexString.toString();
+    }
+
+    public boolean setManchesterEncoding(boolean manchester){
+        byte mdmcfg2 = readReg(CC1101_MDMCFG2);
+        //bit 3 is the manchester encoding bit
+        if(manchester){
+            mdmcfg2 |= 0b00001000;
+        }
+        else{
+            mdmcfg2 &= 0b11110111;
+        }
+        writeReg(CC1101_MDMCFG2, mdmcfg2);
+        //verify
+        return readReg(CC1101_MDMCFG2) == mdmcfg2;
+    }
+
+    public boolean setNumPreambleBytes(int num){
+        byte mdmcfg1 = (byte)(num << 4);
+
+        writeReg(CC1101_MDMCFG1, mdmcfg1);
+        //verify
+        return readReg(CC1101_MDMCFG1) == mdmcfg1;
     }
 
 

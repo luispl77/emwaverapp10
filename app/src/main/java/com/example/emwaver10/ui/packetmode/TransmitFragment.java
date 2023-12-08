@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,11 +54,29 @@ public class TransmitFragment extends Fragment implements CommandSender {
                 new Thread(() -> {
                     byte [] teslaSignal = {(byte)0xAA, (byte)0xAA, (byte)0xAA, (byte)0xCB, (byte)0x8A, 50, -52, -52, -53, 77, 45, 74, -45, 76, -85, 75, 21, -106, 101, -103, -103, -106, -102, 90, -107, -90, -103, 86, -106, 43, 44, -53, 51, 51, 45, 52, -75, 43, 77, 50, -83, 40};
                     cc.sendData(teslaSignal, teslaSignal.length, 300);
-                    cc.writeReg((byte)0x10, (byte)0x69); //test readReg
-                    cc.readReg((byte)0x10);
+                    //cc.writeReg((byte)0x10, (byte)0x69); //test readReg
+                    //cc.readReg((byte)0x10);
                 }).start();
             }
         });
+
+        binding.manchesterSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                // isChecked will be true if the switch is to the right (Manchester)
+                new Thread(() -> {
+                    if(cc.setManchesterEncoding(isChecked)) {
+                        showToastOnUiThread("Encoding set successfully");
+                    } else {
+                        showToastOnUiThread("Failed to set encoding");
+                        // It might be a good idea to revert the switch to its previous state if the operation failed
+                        binding.manchesterSwitch.setChecked(!isChecked);
+                    }
+                }).start();
+
+            }
+        });
+
 
         binding.setDataRateButton.setOnClickListener(new View.OnClickListener() {
             @Override
