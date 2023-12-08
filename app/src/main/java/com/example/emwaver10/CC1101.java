@@ -324,6 +324,52 @@ public class CC1101 {
         return readReg(CC1101_MDMCFG2) == mdmcfg2;
     }
 
+
+    public boolean setDeviation(int deviation) {
+        // Constants for the DEVIATN register calculation
+        final double F_OSC = 26_000_000; // Oscillator frequency in Hz
+        final int DEVIATION_M_MAX = 7; // 3-bit DEVIATION_M has max value 7
+        final int DEVIATION_E_MAX = 7; // 3-bit DEVIATION_E has max value 7
+
+        // The target deviation formula as per the datasheet
+        double target = deviation * Math.pow(2, 17) / F_OSC;
+        double minDifference = Double.MAX_VALUE;
+        int bestM = 0;
+        int bestE = 0;
+
+        // Find the closest DEVIATION_M and DEVIATION_E for the desired deviation
+        for (int e = 0; e <= DEVIATION_E_MAX; e++) {
+            for (int m = 0; m <= DEVIATION_M_MAX; m++) {
+                double currentValue = (8 + m) * Math.pow(2, e);
+                double difference = Math.abs(currentValue - target);
+                if (difference < minDifference) {
+                    minDifference = difference;
+                    bestM = m;
+                    bestE = e;
+                }
+            }
+        }
+
+        byte [] values = {(byte)bestE, (byte)bestM};
+        // Log the values found
+        Log.i("Deviation", toHexStringWithHexPrefix(values));
+
+        // Combine the read TX and RX parts with the calculated DEVIATION_E and DEVIATION_M
+        int combinedValue = ((bestE << 4) & 0x70) | (bestM & 0x07);
+
+        // Write the combined value to the DEVIATN register
+        writeReg((byte) CC1101_DEVIATN, (byte) combinedValue);
+
+        // Confirm reading
+        byte confirmValue = readReg((byte)CC1101_DEVIATN);
+        if (confirmValue == (byte)combinedValue) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
     public boolean setNumPreambleBytes(int num){
         byte mdmcfg1 = (byte)(num << 4);
 

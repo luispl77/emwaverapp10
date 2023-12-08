@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
+import android.text.InputFilter;
 import android.util.Log;
 
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,7 +55,14 @@ public class PacketModeFragment extends Fragment implements CommandSender {
         binding = FragmentPacketModeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-
+        InputFilter hexFilter = (source, start, end, dest, dstart, dend) -> {
+            for (int i = start; i < end; i++) {
+                if (!Character.toString(source.charAt(i)).matches("[0-9a-fA-F]*")) {
+                    return "";
+                }
+            }
+            return null;
+        };
 
         binding.sendTesla.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,6 +93,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             }
         });
 
+
         binding.datarateTextInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 new Thread(() -> {
@@ -106,10 +116,35 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             return false;
         });
 
-        binding.datarateTextInput.setOnEditorActionListener((v, actionId, event) -> {
+        binding.deviationTextInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 new Thread(() -> {
-                    String hexInput = binding.datarateTextInput.getText().toString().trim();
+                    String deviationStr = binding.deviationTextInput.getText().toString().trim();
+                    // Parse the string to an integer
+                    try {
+                        int deviation = Integer.parseInt(deviationStr);
+
+                        // Now use deviation to set the deviation
+                        if (cc.setDeviation(deviation)) {
+                            showToastOnUiThread("Deviation set to " + deviation + " successfully");
+                        } else {
+                            showToastOnUiThread("Error setting deviation");
+                        }
+                    } catch (NumberFormatException e) {
+                        showToastOnUiThread("Invalid deviation entered");
+                    }
+                }).start();
+                return true; // Consume the action
+            }
+            return false; // Pass the event on to other listeners
+        });
+
+
+        binding.syncwordTextInput.setFilters(new InputFilter[]{hexFilter});
+        binding.syncwordTextInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                new Thread(() -> {
+                    String hexInput = binding.syncwordTextInput.getText().toString().trim();
                     // Check if the input is a 4-character hex string
                     if (hexInput.length() != 4) {
                         showToastOnUiThread("Input must be a 4-character hex value");
@@ -155,6 +190,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             }
         });
 
+        binding.payloadDataTextInput.setFilters(new InputFilter[]{hexFilter});
         // Set an OnClickListener for the button
         binding.sendPayloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -211,6 +247,8 @@ public class PacketModeFragment extends Fragment implements CommandSender {
                 }
             }).start();
         });
+
+
 
 
 

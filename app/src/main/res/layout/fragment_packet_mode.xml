@@ -51,9 +51,9 @@
 
     <EditText
         android:id="@+id/datarateTextInput"
-        android:layout_width="161dp"
-        android:layout_height="48dp"
-        android:hint="Enter data rate..."
+        android:layout_width="120dp"
+        android:layout_height="53dp"
+        android:hint="datarate..."
         android:imeOptions="actionDone"
         android:inputType="number"
         android:padding="8dp"
@@ -62,17 +62,28 @@
         app:layout_constraintTop_toBottomOf="@+id/manchesterSwitch" />
 
     <EditText
-        android:id="@+id/syncwordTextInput"
-        android:layout_width="161dp"
+        android:id="@+id/deviationTextInput"
+        android:layout_width="120dp"
         android:layout_height="48dp"
-        android:hint="Enter sync word..."
+        android:hint="deviation..."
         android:imeOptions="actionDone"
         android:inputType="number"
         android:padding="8dp"
         android:textColor="#000"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/datarateTextInput"
+        app:layout_constraintStart_toEndOf="@+id/syncwordTextInput"
         app:layout_constraintTop_toBottomOf="@+id/preambleSelector" />
+
+    <EditText
+        android:id="@+id/syncwordTextInput"
+        android:layout_width="120dp"
+        android:layout_height="48dp"
+        android:hint="sync word..."
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:padding="8dp"
+        android:textColor="#000"
+        app:layout_constraintStart_toEndOf="@+id/datarateTextInput"
+        app:layout_constraintTop_toBottomOf="@+id/modulationSelector" />
 
     <Button
         android:id="@+id/sendPayloadButton"
