@@ -289,7 +289,7 @@ public class CC1101 {
         writeReg(CC1101_MDMCFG2, currentValue);
 
         // Assuming writeReg method exists and returns a boolean indicating success
-        return true;
+        return readReg(CC1101_MDMCFG2) == currentValue;
     }
 
     public String toHexStringWithHexPrefix(byte[] array) {
@@ -330,6 +330,18 @@ public class CC1101 {
         writeReg(CC1101_MDMCFG1, mdmcfg1);
         //verify
         return readReg(CC1101_MDMCFG1) == mdmcfg1;
+    }
+
+    public String bytesToHexString(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xFF & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
 
