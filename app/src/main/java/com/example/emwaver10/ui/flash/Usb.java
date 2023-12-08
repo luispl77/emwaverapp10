@@ -25,13 +25,13 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
+import android.os.Build;
 import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Iterator;
 
 public class Usb {
-
     final static String TAG = "Umbrela Client: USB";
 
     private Context mContext;
@@ -65,7 +65,6 @@ public class Usb {
 
     /* Broadcast Receiver*/
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
@@ -117,7 +116,8 @@ public class Usb {
 
     public void requestPermission(Context context, int vendorId, int productId) {
         // Setup Pending Intent
-        PendingIntent permissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(Usb.ACTION_USB_PERMISSION), 0);
+        int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
+        PendingIntent permissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(Usb.ACTION_USB_PERMISSION), flags);
         UsbDevice device = getUsbDevice(vendorId, productId);
 
         if (device != null) {
