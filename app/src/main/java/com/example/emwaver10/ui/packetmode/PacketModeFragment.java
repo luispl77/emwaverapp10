@@ -190,12 +190,12 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             }
         });
 
-        binding.payloadDataTextInput.setFilters(new InputFilter[]{hexFilter});
+        binding.receivePayloadDataTextInput.setFilters(new InputFilter[]{hexFilter});
         // Set an OnClickListener for the button
         binding.sendPayloadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String payload = binding.payloadDataTextInput.getText().toString();
+                String payload = binding.transmitPayloadDataTextInput.getText().toString();
                 Log.i("Payload", payload);
                 byte [] payload_bytes = cc.convertHexStringToByteArray(payload);
 
@@ -217,8 +217,16 @@ public class PacketModeFragment extends Fragment implements CommandSender {
                     Log.i("Received", cc.toHexStringWithHexPrefix(receivedBytes));
                     String hexString = cc.bytesToHexString(receivedBytes);
                     getActivity().runOnUiThread(() ->
-                            binding.payloadDataTextInput.setText(hexString));
+                            binding.receivePayloadDataTextInput.setText(hexString));
                 }).start();
+            }
+        });
+
+        binding.transferPayloadTxButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getActivity().runOnUiThread(() ->
+                        binding.transmitPayloadDataTextInput.setText(binding.receivePayloadDataTextInput.getText().toString()));
             }
         });
 
@@ -264,6 +272,22 @@ public class PacketModeFragment extends Fragment implements CommandSender {
                     showToastOnUiThread("Preamble set successfully to index " + position);
                 } else {
                     showToastOnUiThread("Failed to set preamble");
+                }
+            }).start();
+        });
+
+        String[] syncmodes = getResources().getStringArray(R.array.sync_modes);
+        ArrayAdapter<String> syncmodeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, syncmodes);
+        binding.syncModeSelector.setAdapter(syncmodeAdapter);
+        binding.syncModeSelector.setOnClickListener(v -> binding.syncModeSelector.showDropDown());
+
+        binding.syncModeSelector.setOnItemClickListener((parent, view, position, id) -> {
+            new Thread(() -> {
+                // Handle the selection based on index
+                if(cc.setSyncMode((byte)position)) {
+                    showToastOnUiThread("Sync mode set successfully to index " + position);
+                } else {
+                    showToastOnUiThread("Failed to set sync mode");
                 }
             }).start();
         });

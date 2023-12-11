@@ -22,6 +22,16 @@
         <item>16</item>
         <item>24</item>
     </string-array>
+    <string-array name="sync_modes">
+        <item>No preamble/sync word</item>
+        <item>15/16 bits</item>
+        <item>16/16 bits</item>
+        <item>30/32 bits</item>
+        <item>No preamble/sync + carrier sense above threshold</item>
+        <item>15/16 + carrier sense above threshold</item>
+        <item>16/16 + carrier sense above threshold</item>
+        <item>30/32 + carrier sense above threshold</item>
+    </string-array>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="device_status">Hold the Boot0 button and connect the device using an OTG cable.\nOnce completed, reopen the app.</string>

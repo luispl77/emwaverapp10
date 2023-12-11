@@ -324,6 +324,28 @@ public class CC1101 {
         return readReg(CC1101_MDMCFG2) == mdmcfg2;
     }
 
+    public boolean setSyncMode(byte syncmode){
+        // Read the current register value
+        byte currentValue = readReg(CC1101_MDMCFG2);
+
+        Log.i("MDMCFG2", "current value: " + currentValue);
+
+        byte mask = 0b00000111; // Mask for the sync mode bits (bit 0, 1, 2)
+        currentValue &= ~mask; // Clear the sync bits
+
+        // Set the new sync bits
+        // Assuming that the 'sync' argument is already just the 3 bits needed
+
+        currentValue |= (syncmode); // Combine the new modulation bits with the current value
+
+        Log.i("MDMCFG2", "modified value: " + currentValue);
+        // Write the new value back to the register
+        writeReg(CC1101_MDMCFG2, currentValue);
+
+        // Assuming writeReg method exists and returns a boolean indicating success
+        return readReg(CC1101_MDMCFG2) == currentValue;
+    }
+
 
     public boolean setDeviation(int deviation) {
         // Constants for the DEVIATN register calculation

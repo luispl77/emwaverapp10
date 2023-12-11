@@ -126,7 +126,8 @@ public class Dfu {
 
     public void setUsb(Usb usb) {
         this.usb = usb;
-        this.deviceVersion = this.usb.getDeviceVersion();
+        if(usb != null)
+            this.deviceVersion = this.usb.getDeviceVersion();
     }
 
     // check if usb device is active
