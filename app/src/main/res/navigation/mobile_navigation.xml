@@ -18,6 +18,18 @@
         tools:layout="@layout/fragment_packet_mode" />
 
     <fragment
+        android:id="@+id/navigation_continuousmode"
+        android:name="com.example.emwaver10.ui.continuousmode.ContinuousModeFragment"
+        android:label="Continuous Mode"
+        tools:layout="@layout/fragment_continuous_mode" />
+
+    <fragment
+        android:id="@+id/navigation_scripts"
+        android:name="com.example.emwaver10.ui.scripts.ScriptsFragment"
+        android:label="Scripts"
+        tools:layout="@layout/fragment_continuous_mode" />
+
+    <fragment
         android:id="@+id/navigation_flash"
         android:name="com.example.emwaver10.ui.flash.FlashFragment"
         android:label="@string/title_notifications"

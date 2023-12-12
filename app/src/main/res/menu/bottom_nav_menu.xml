@@ -12,8 +12,20 @@
         android:title="@string/title_dashboard" />
 
     <item
+        android:id="@+id/navigation_continuousmode"
+        android:icon="@drawable/ic_continuousmode_black_24dp"
+        android:title="Continuous Mode" />
+
+    <item
+        android:id="@+id/navigation_scripts"
+        android:icon="@drawable/ic_scripts_black_24dp"
+        android:title="Scripts" />
+
+    <item
         android:id="@+id/navigation_flash"
         android:icon="@drawable/ic_flash_black_24dp"
         android:title="@string/title_notifications" />
+
+
 
 </menu>
