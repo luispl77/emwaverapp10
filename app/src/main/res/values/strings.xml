@@ -35,5 +35,20 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="device_status">Hold the Boot0 button and connect the device using an OTG cable.\nOnce completed, reopen the app.</string>
-    <string name="example_javascript"><![CDATA[CC1101.sendInit();]]></string>
+    <string name="example_javascript"><![CDATA[function sendInit() {
+        var command = [0x74, 0x78, 0x69, 0x6e, 0x69, 0x74];
+        var responseString = \'Transmit init done\\n\';
+        var length = responseString.length;
+        var response = Serial.sendCommandAndGetResponse(command, length, 1, 1000);
+
+        if (response != null) {
+            var responseStr = \'\';
+            for (var i = 0; i < response.length; i++) {
+                responseStr += String.fromCharCode(response[i] & 0xFF);
+            }
+            Console.print(\'Command Response: \' + responseStr);
+        }
+    }
+    sendInit();]]></string>
+
 </resources>

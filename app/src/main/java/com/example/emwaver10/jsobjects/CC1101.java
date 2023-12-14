@@ -1,6 +1,8 @@
-package com.example.emwaver10;
+package com.example.emwaver10.jsobjects;
 
 import android.util.Log;
+
+import com.example.emwaver10.CommandSender;
 
 import java.util.Arrays;
 
@@ -115,6 +117,7 @@ public class CC1101 {
     public CC1101(CommandSender commandSender) {
         this.commandSender = commandSender;
     }
+
 
     public void spiStrobe(byte commandStrobe) {
         byte[] command = new byte[2];

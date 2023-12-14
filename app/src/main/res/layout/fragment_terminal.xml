@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.terminal.TerminalFragment">
+    tools:context=".ui.serial.TerminalFragment">
 
     <!-- Connect Button at the top -->
     <Button
@@ -19,7 +19,7 @@
 
     <!-- Clear Button at the top -->
 
-    <!-- Terminal Output TextView -->
+    <!-- Serial Output TextView -->
     <Button
         android:id="@+id/clearButton"
         android:layout_width="wrap_content"

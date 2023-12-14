@@ -1,15 +1,10 @@
 package com.example.emwaver10.ui.scripts;
 
-import android.content.BroadcastReceiver;
-import android.content.Intent;
-import android.util.Log;
-
-import com.example.emwaver10.CC1101;
-import com.example.emwaver10.CommandSender;
-import com.example.emwaver10.Constants;
+import com.example.emwaver10.jsobjects.CC1101;
+import com.example.emwaver10.jsobjects.Console;
+import com.example.emwaver10.jsobjects.Serial;
 
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Function;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
@@ -36,12 +31,18 @@ public class ScriptsEngine{
 
     private CC1101 cc1101;
 
+    private Serial serial;
+
+    private Console console;
+
     private ScriptsViewModel scriptsViewModel;
     private static final String SCRIPT = "function evaluate(arithmetic){ return eval(arithmetic); }";
 
-    public ScriptsEngine(CC1101 cc1101, ScriptsViewModel scriptsViewModel) {
+    public ScriptsEngine(CC1101 cc1101, ScriptsViewModel scriptsViewModel, Serial serial, Console console) {
         this.cc1101 = cc1101;
         this.scriptsViewModel = scriptsViewModel;
+        this.serial = serial;
+        this.console = console;
     }
 
 
@@ -50,10 +51,16 @@ public class ScriptsEngine{
             rhino = Context.enter();
             rhino.setOptimizationLevel(-1);
             scope = rhino.initStandardObjects();
-            // Bind the interface implementation to the JavaScript context
+            // Make entire CC1101 class accessible from javascript
             Object wrappedCC = Context.javaToJS(cc1101, scope);
             ScriptableObject.putProperty(scope, "CC1101", wrappedCC);
-            // Execute the JavaScript string
+            // Make entire Serial class accessible from javascript
+            Object wrappedSerial = Context.javaToJS(serial, scope);
+            ScriptableObject.putProperty(scope, "Serial", wrappedSerial);
+            // Make entire Console class accessible from javascript
+            Object wrappedConsole = Context.javaToJS(console, scope);
+            ScriptableObject.putProperty(scope, "Console", wrappedConsole);
+            // Execute the JavaScript script
             rhino.evaluateString(scope, script, "JavaScript", 1, null);
         } catch (RhinoException e) {
             e.printStackTrace();

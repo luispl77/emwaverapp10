@@ -16,26 +16,17 @@ import android.view.ViewGroup;
 
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.emwaver10.CC1101;
+import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.R;
 import com.example.emwaver10.databinding.FragmentPacketModeBinding;
-
-import com.google.android.material.tabs.TabLayoutMediator;
-
-import java.util.Queue;
-import java.util.Arrays;
 
 public class PacketModeFragment extends Fragment implements CommandSender {
 

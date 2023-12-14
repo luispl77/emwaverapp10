@@ -11,24 +11,26 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.emwaver10.CC1101;
+import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.Constants;
-import com.example.emwaver10.R;
+import com.example.emwaver10.jsobjects.Serial;
+import com.example.emwaver10.jsobjects.Console;
 import com.example.emwaver10.databinding.FragmentScriptsBinding;
 
 public class ScriptsFragment extends Fragment implements CommandSender {
 
     private ScriptsViewModel scriptsViewModel;
-
     private CC1101 cc1101;
-    private FragmentScriptsBinding binding; // Binding class for the fragment_scripts.xml layout
 
+    private Serial serial;
+
+    private Console console;
+    private FragmentScriptsBinding binding; // Binding class for the fragment_scripts.xml layout
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -41,13 +43,17 @@ public class ScriptsFragment extends Fragment implements CommandSender {
 
         cc1101 = new CC1101(this);
 
+        serial = new Serial(getContext(), this);
+
+        console = new Console(getContext());
+
         // Set up your button click listeners
         binding.executeScriptButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
                     String jsCode = binding.jsCodeInput.getText().toString(); // Get code from EditText
-                    ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel);
+                    ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel, serial, console);
                     scriptsEngine.executeJavaScript(jsCode);
                 }).start();
             }

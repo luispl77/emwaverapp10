@@ -80,7 +80,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     public void onCreate() {
         super.onCreate();
         liveData = new MutableLiveData<>();
-        // Register receivers for listening for broadcasts from Terminal fragment.
+        // Register receivers for listening for broadcasts from Serial fragment.
         IntentFilter filterConnectButton = new IntentFilter(Constants.ACTION_CONNECT_USB);
         registerReceiver(connectReceiver, filterConnectButton); // Receiver for the connect button in terminal.
         IntentFilter filterData = new IntentFilter(Constants.ACTION_SEND_DATA_TO_SERVICE);
@@ -159,7 +159,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         return port;
     }
 
-    //Called from the broadcast done in Terminal, when user clicks the connect button.
+    //Called from the broadcast done in Serial, when user clicks the connect button.
     public void onConnectClick() throws IOException {
         try {
             finalPort = connectUSBAndReturnPort();
