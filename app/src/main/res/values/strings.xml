@@ -35,4 +35,5 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="device_status">Hold the Boot0 button and connect the device using an OTG cable.\nOnce completed, reopen the app.</string>
+    <string name="example_javascript"><![CDATA[for (var i = 0; i < 5; i++) { print(\'Hello from JavaScript! \' + (i + 1)); }]]></string>
 </resources>
