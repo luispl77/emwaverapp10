@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,6 +72,7 @@ public class TerminalFragment extends Fragment{
         public void onReceive(Context context, Intent intent) {
             if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
                 String dataString = intent.getStringExtra("data");
+                Log.i("terminal", dataString);
                 terminalViewModel.appendData(dataString); // Update UI by appending the USB data received in TerminalViewModel.
             }
         }

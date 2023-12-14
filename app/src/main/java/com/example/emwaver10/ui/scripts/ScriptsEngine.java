@@ -1,7 +1,10 @@
 package com.example.emwaver10.ui.scripts;
 
+import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.util.Log;
+
+import com.example.emwaver10.Constants;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -31,7 +34,7 @@ public class ScriptsEngine {
     private static final String SCRIPT = "function evaluate(arithmetic){ return eval(arithmetic); }";
 
 
-    public void executeJavaScript(String script, final android.content.Context androidContext) {
+    public void executeJavaScript(String script, final android.content.Context androidContext, ScriptsViewModel scriptsViewModel) {
         try {
             rhino = Context.enter();
             rhino.setOptimizationLevel(-1);
@@ -39,11 +42,53 @@ public class ScriptsEngine {
 
             // Implement the interface
             JsInterface jsInterface = new JsInterface() {
-                public void broadcastIntent(String message) {
-                    Intent intent = new Intent("com.example.ACTION_USB_DATA");
+                @Override
+                public byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
+                    // Send the command
+                    sendCommand(command, 0);
+
+                    long startTime = System.currentTimeMillis(); // Start time for timeout
+
+                    // Wait for the response with timeout
+                    while (scriptsViewModel.getResponseQueueSize() < expectedResponseSize) {
+                        if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                            broadcastTerminalString("Timeout occured");
+                            return null; // Timeout occurred
+                        }
+                        try {
+                            Thread.sleep(busyDelay); // Wait for it to arrive
+                            //todo: try using wait/notify mechanism to really avoid busy waiting
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt(); // Restore the interrupted status
+                            return null; // Return or handle the interruption as appropriate
+                        }
+                    }
+                    // Retrieve the response
+                    return scriptsViewModel.getAndClearResponse(expectedResponseSize);
+                }
+
+                public void broadcastTerminalString(String message) {
+                    Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
                     intent.putExtra("data", message);
                     androidContext.sendBroadcast(intent);
-                    Log.i("ScriptsEngine", "intent sent");
+                }
+                @Override
+                public void sendCommandString(String userInput, int delayMillis) {
+                    Intent intent = new Intent(Constants.ACTION_SEND_DATA_TO_SERVICE);
+                    intent.putExtra("userInput", userInput);
+                    androidContext.sendBroadcast(intent);
+                    try {
+                        Thread.sleep(delayMillis); // Wait for it to arrive
+                        //todo: try using wait/notify mechanism to really avoid busy waiting
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt(); // Restore the interrupted status
+                    }
+                }
+                @Override
+                public void sendCommand(byte[] bytes, int delayMillis) {
+                    Intent intent = new Intent(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
+                    intent.putExtra("bytes", bytes);
+                    androidContext.sendBroadcast(intent);
                 }
             };
 
@@ -53,8 +98,32 @@ public class ScriptsEngine {
 
             String bindFunctionScript =
                     "function print(message) { " +
-                            "  AndroidFunction.broadcastIntent(message);" +
-                            "}";
+                            "  AndroidFunction.broadcastTerminalString(message);" +
+                            "}" +
+                    "function sendCommandString(message, delayMillis) { " +
+                            "  AndroidFunction.sendCommandString(message, delayMillis);" +
+                            "}" +
+                    "function sendCommand(message) { " +
+                            "  AndroidFunction.sendCommand(message);" +
+                            "}" +
+                    "function sendCommandAndGetResponse(command, expectedResponseSize, busyDelay, timeoutMillis) { " +
+                            "  return AndroidFunction.sendCommandAndGetResponse(command, expectedResponseSize, busyDelay, timeoutMillis);" +
+                            "}" +
+                    "function sendInit() {\n" +
+                            "    var command = [0x74, 0x78, 0x69, 0x6e, 0x69, 0x74]; // 't', 'x', 'i', 'n', 'i', 't' in hex\n" +
+                            "    var responseString = \"Transmit init done\\n\";\n" +
+                            "    var length = responseString.length;\n" +
+                            "    var response = sendCommandAndGetResponse(command, length, 1, 1000);\n" +
+                            "    if (response != null) {" +
+                            "        var responseStr = '';" +
+                            "        for (var i = 0; i < response.length; i++) {" +
+                            "            responseStr += String.fromCharCode(response[i] & 0xFF);" +
+                            "        }" +
+                            "        print('Command Response: ' + responseStr);" +
+                            "    }" +
+                            "    else" +
+                            "   print('response null')" +
+                            "}\n";
 
             rhino.evaluateString(scope, bindFunctionScript, "JavaScript", 1, null);
 
@@ -94,6 +163,9 @@ public class ScriptsEngine {
             Context.exit();
         }
     }
+
+
+
 
 
 }

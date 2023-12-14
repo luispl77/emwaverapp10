@@ -45,7 +45,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
             } else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
                 String userInput = intent.getStringExtra("userInput");
                 // Send the received data over USB.
-                //Log.i("ser", "service received data: " + userInput);
+                Log.i("service", userInput);
                 assert userInput != null;
                 byte[] byteArray = userInput.getBytes();
                 try {
