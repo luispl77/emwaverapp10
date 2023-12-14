@@ -6,27 +6,75 @@
     android:layout_height="match_parent"
     tools:context=".ui.scripts.ScriptsFragment">
 
-    <EditText
-        android:id="@+id/jsCodeInput"
-        android:layout_width="0dp"
+
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/example_javascript"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="10dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        android:layout_marginTop="32dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintTop_toTopOf="parent">
+
+        <HorizontalScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/jsCodeInput"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:gravity="start|top"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:minWidth="500dp"
+                android:padding="16dp"
+                android:scrollHorizontally="true"
+                android:text="@string/example_javascript"
+                android:textSize="10sp" />
+
+        </HorizontalScrollView>
+    </ScrollView>
+
+    <Spinner
+        android:id="@+id/spinnerFiles"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/executeScriptButton" />
+
+    <EditText
+        android:id="@+id/editTextNewFileName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter new file name"
+        app:layout_constraintTop_toBottomOf="@+id/scrollView2" />
+
+    <Button
+        android:id="@+id/buttonSave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Changes"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonRename" />
+
+    <Button
+        android:id="@+id/buttonRename"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rename File"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextNewFileName" />
+
 
     <Button
         android:id="@+id/executeScriptButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Execute Script"
-        app:layout_constraintTop_toBottomOf="@id/jsCodeInput"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonSave" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
