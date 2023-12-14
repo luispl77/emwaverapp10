@@ -1,5 +1,7 @@
 package com.example.emwaver10.ui.packetmode;
 
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 
 import android.content.BroadcastReceiver;
@@ -7,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
+import android.os.IBinder;
 import android.text.InputFilter;
 import android.util.Log;
 
@@ -22,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.emwaver10.SerialService;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.Constants;
@@ -35,6 +39,22 @@ public class PacketModeFragment extends Fragment implements CommandSender {
     private PacketModeViewModel packetModeViewModel;
 
     private CC1101 cc;
+    private SerialService serialService;
+    private boolean isServiceBound = false;
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            SerialService.LocalBinder binder = (SerialService.LocalBinder) service;
+            serialService = binder.getService();
+            isServiceBound = true;
+            Log.i("service binding", "onServiceConnected");
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            isServiceBound = false;
+            Log.i("service binding", "onServiceDisconnected");
+        }
+    };
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -287,68 +307,20 @@ public class PacketModeFragment extends Fragment implements CommandSender {
         return root;
     }
 
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Register BroadcastReceiver here
-        // Register usbDataReceiver for listening to new data received on USB port
-        IntentFilter filter = new IntentFilter(Constants.ACTION_USB_DATA_RECEIVED);
-        requireActivity().registerReceiver(usbDataReceiver, filter); //todo: fix visibility of broadcast receivers
-
-        IntentFilter filterBytes = new IntentFilter(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
-        requireActivity().registerReceiver(usbDataReceiver, filterBytes);
-    }
-
     @Override
     public void onStart() {
         super.onStart();
-        // Register usbDataReceiver for listening to new data received on USB port
-        IntentFilter filter = new IntentFilter(Constants.ACTION_USB_DATA_RECEIVED);
-        requireActivity().registerReceiver(usbDataReceiver, filter); //todo: fix visibility of broadcast receivers
-
-        IntentFilter filterBytes = new IntentFilter(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
-        requireActivity().registerReceiver(usbDataReceiver, filterBytes);
-        Log.i("onStart", "receiver registered");
+        if (!isServiceBound && getActivity() != null) {
+            Intent intent = new Intent(getActivity(), SerialService.class);
+            getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
-        //Log.i("onDestroy", "on start");
     }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        requireActivity().unregisterReceiver(usbDataReceiver); //disable the routine for receiving data when we leave packet mode.
-        Log.i("onStop", "receiver unregistered");
-    }
-
-
-
-    private final BroadcastReceiver usbDataReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
-                String dataString = intent.getStringExtra("data");
-                if (dataString != null) {
-                    //Log.i("ser string", dataString);
-                }
-            }
-            else if (Constants.ACTION_USB_DATA_BYTES_RECEIVED.equals(intent.getAction())) {
-                byte [] bytes = intent.getByteArrayExtra("bytes");
-                if (bytes != null) {
-                    // Optionally, you can log the byte array to see its contents
-                    //Log.i("service bytes", Arrays.toString(bytes));
-                    for (byte b : bytes) {
-                        packetModeViewModel.addResponseByte(b);
-                    }
-                }
-            }
-        }
-    };
 
 
 
@@ -363,39 +335,33 @@ public class PacketModeFragment extends Fragment implements CommandSender {
     @Override
     public byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
         // Send the command
-        sendByteDataToService(command);
+        if(isServiceBound){
+            serialService.write(command);
+        }
 
         long startTime = System.currentTimeMillis(); // Start time for timeout
 
         // Wait for the response with timeout
-        while (packetModeViewModel.getResponseQueueSize() < expectedResponseSize) {
+        while (isServiceBound && serialService.getResponseQueue().size() < expectedResponseSize) {
             if (System.currentTimeMillis() - startTime > timeoutMillis) {
-                Log.e("sendCmdGetResponse", "Timeout occurred");
-                //Toast.makeText(getContext(), "timeout", Toast.LENGTH_SHORT).show();
                 return null; // Timeout occurred
             }
             try {
                 Thread.sleep(busyDelay); // Wait for it to arrive
-                //todo: try using wait/notify mechanism to really avoid busy waiting
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // Restore the interrupted status
-                return null; // Return or handle the interruption as appropriate
+                Thread.currentThread().interrupt();
+                return null;
             }
         }
+
         // Retrieve the response
-        return packetModeViewModel.getAndClearResponse(expectedResponseSize);
-    }
+        byte[] response = new byte[expectedResponseSize];
+        for (int i = 0; i < expectedResponseSize; i++) {
+            response[i] = serialService.getResponseQueue().poll();
+        }
 
-    private void sendByteDataToService(byte[] bytes) {
-        Intent intent = new Intent(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
-        intent.putExtra("bytes", bytes);
-        requireActivity().sendBroadcast(intent);
-    }
-
-    private void sendDataToService(String userInput) {
-        Intent intent = new Intent(Constants.ACTION_SEND_DATA_TO_SERVICE);
-        intent.putExtra("userInput", userInput);
-        requireActivity().sendBroadcast(intent);
+        serialService.clearResponseQueue(); // Optionally clear the queue after processing
+        return response;
     }
 
 

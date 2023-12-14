@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -24,12 +25,58 @@ import com.hoho.android.usbserial.util.SerialInputOutputManager;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SerialService extends Service implements SerialInputOutputManager.Listener {
 
     private SerialInputOutputManager ioManager;
-    private MutableLiveData<String> liveData; // Example LiveData for communication
+
     private UsbSerialPort finalPort = null;
+
+    private ConcurrentLinkedQueue<Byte> responseQueue = new ConcurrentLinkedQueue<>();
+
+    private final IBinder binder = new LocalBinder();
+
+
+    public class LocalBinder extends Binder {
+        public SerialService getService() {
+            // Return this instance of SerialService so clients can call public methods
+            return SerialService.this;
+        }
+    }
+
+    public void addResponseByte(Byte responseByte) {
+        responseQueue.add(responseByte);
+    }
+    // Method to retrieve and clear data from the queue
+    public byte[] getAndClearResponse(int expectedSize) {
+        byte[] response = new byte[expectedSize];
+        for (int i = 0; i < expectedSize; i++) {
+            response[i] = responseQueue.poll(); // or handle nulls if necessary
+        }
+        return response;
+    }
+    public ConcurrentLinkedQueue<Byte> getResponseQueue() {
+        return responseQueue;
+    }
+    // Method to clear the queue, if needed
+    public void clearResponseQueue() {
+        responseQueue.clear();
+    }
+
+    public void write(byte[] bytes){
+        if(bytes != null && finalPort != null) {
+            try {
+                finalPort.write(bytes, 2000);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        else{
+            Toast.makeText(this, "No devices found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     // Register the BroadcastReceiver
     private final BroadcastReceiver connectReceiver = new BroadcastReceiver() {
@@ -58,20 +105,6 @@ public class SerialService extends Service implements SerialInputOutputManager.L
                     Log.i("ser", "no port" + userInput);
                     throw new RuntimeException(e);
                 }
-            } else if (Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE.equals(intent.getAction())) {
-                byte [] bytes = intent.getByteArrayExtra("bytes");
-                //Log.i("ser", "service received bytes data: " + Arrays.toString(bytes));
-                assert bytes != null;
-                try {
-                    if(bytes != null && finalPort != null)
-                        finalPort.write(bytes, 2000);
-                    else{
-                        Toast.makeText(context, "No devices found", Toast.LENGTH_SHORT).show();
-                    }
-                } catch (IOException e) {
-                    Log.i("ser", "no port");
-                    throw new RuntimeException(e);
-                }
             }
         }
     };
@@ -79,7 +112,6 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     @Override
     public void onCreate() {
         super.onCreate();
-        liveData = new MutableLiveData<>();
         // Register receivers for listening for broadcasts from Serial fragment.
         IntentFilter filterConnectButton = new IntentFilter(Constants.ACTION_CONNECT_USB);
         registerReceiver(connectReceiver, filterConnectButton); // Receiver for the connect button in terminal.
@@ -100,24 +132,22 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
     }
 
     //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
     @Override
     public void onNewData(byte[] data) {
-        // Update LiveData or send Broadcast
-        //Log.i("onNewData bytes: ", Arrays.toString(data));
+        //for the terminal
         String dataString = new String(data);
-        liveData.postValue(dataString);
-        // Or send a broadcast
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
         intent.putExtra("data", dataString);
         sendBroadcast(intent);
 
-        Intent intentBytes = new Intent(Constants.ACTION_USB_DATA_BYTES_RECEIVED);
-        intentBytes.putExtra("bytes", data);
-        sendBroadcast(intentBytes);
+        //response buffer to be accessed by service-bound activities
+        for (int i = 0; i < data.length; i++) {
+            addResponseByte(data[i]);
+        }
     }
 
     @Override
