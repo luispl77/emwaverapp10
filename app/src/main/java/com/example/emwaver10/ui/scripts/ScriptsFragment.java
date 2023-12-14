@@ -17,13 +17,16 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.emwaver10.CC1101;
+import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.Constants;
 import com.example.emwaver10.R;
 import com.example.emwaver10.databinding.FragmentScriptsBinding;
 
-public class ScriptsFragment extends Fragment {
+public class ScriptsFragment extends Fragment implements CommandSender {
 
     private ScriptsViewModel scriptsViewModel;
+
+    private CC1101 cc1101;
     private FragmentScriptsBinding binding; // Binding class for the fragment_scripts.xml layout
 
 
@@ -36,14 +39,16 @@ public class ScriptsFragment extends Fragment {
 
         scriptsViewModel = new ViewModelProvider(this).get(ScriptsViewModel.class);
 
+        cc1101 = new CC1101(this);
+
         // Set up your button click listeners
         binding.executeScriptButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
                     String jsCode = binding.jsCodeInput.getText().toString(); // Get code from EditText
-                    ScriptsEngine scriptsEngine = new ScriptsEngine();
-                    scriptsEngine.executeJavaScript(jsCode, getContext(), scriptsViewModel);
+                    ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel);
+                    scriptsEngine.executeJavaScript(jsCode);
                 }).start();
             }
         });
@@ -109,5 +114,32 @@ public class ScriptsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null; // Important for avoiding memory leaks
+    }
+
+    @Override
+    public byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
+        // Send the command
+        Intent intent = new Intent(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
+        intent.putExtra("bytes", command);
+        getContext().sendBroadcast(intent);
+
+        long startTime = System.currentTimeMillis(); // Start time for timeout
+
+        // Wait for the response with timeout
+        while (scriptsViewModel.getResponseQueueSize() < expectedResponseSize) {
+            if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                //broadcastTerminalString("Timeout occured");
+                return null; // Timeout occurred
+            }
+            try {
+                Thread.sleep(busyDelay); // Wait for it to arrive
+                //todo: try using wait/notify mechanism to really avoid busy waiting
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                return null; // Return or handle the interruption as appropriate
+            }
+        }
+        // Retrieve the response
+        return scriptsViewModel.getAndClearResponse(expectedResponseSize);
     }
 }
