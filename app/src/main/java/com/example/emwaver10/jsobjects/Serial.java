@@ -29,9 +29,16 @@ public class Serial {
      */
     public void sendTerminalData(String dataString) {
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-        intent.putExtra("data", dataString);
+
+        // Convert the string back to a byte array
+        byte[] dataBytes = dataString.getBytes();
+
+        // Put the byte array into the intent
+        intent.putExtra("data", dataBytes);
+
         context.sendBroadcast(intent);
     }
+
 
     public byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis){
         return commandSender.sendCommandAndGetResponse(command, expectedResponseSize, busyDelay, timeoutMillis);

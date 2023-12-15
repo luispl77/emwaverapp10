@@ -29,19 +29,30 @@
         app:layout_constraintStart_toEndOf="@+id/connectButton"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/terminalText"
+    <CheckBox
+        android:id="@+id/filterCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="filter"
+        android:layout_marginLeft="20dp"
+        app:layout_constraintStart_toEndOf="@+id/clearButton" />
+
+
+    <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#000"
-        android:scrollbars="vertical"
-        android:textColor="#0F0"
-        app:layout_constraintBottom_toTopOf="@+id/terminalTextInput"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintBottom_toTopOf="@id/terminalTextInput"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/connectButton"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toBottomOf="@id/connectButton">
+
+        <TextView
+            android:id="@+id/terminalText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="vertical"
+            android:textColor="#0F0" />
+    </ScrollView>
 
 
     <!-- User Input EditText -->
@@ -49,19 +60,17 @@
         android:id="@+id/terminalTextInput"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="@string/enter_command"
         android:background="#EEE"
-        android:textColor="#000"
-        android:padding="8dp"
+        android:hint="@string/enter_command"
         android:imeOptions="actionDone"
         android:inputType="text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        android:padding="8dp"
+        android:textColor="#000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

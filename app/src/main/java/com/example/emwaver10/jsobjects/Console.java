@@ -24,8 +24,16 @@ public class Console {
      */
     public void print(String dataString) {
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-        intent.putExtra("data", dataString);
+
+        // Convert the string back to a byte array
+        byte[] dataBytes = dataString.getBytes();
+
+        // Put the byte array into the intent
+        intent.putExtra("data", dataBytes);
+
         context.sendBroadcast(intent);
     }
+
+
 
 }

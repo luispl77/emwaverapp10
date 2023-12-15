@@ -138,10 +138,9 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
     @Override
     public void onNewData(byte[] data) {
-        //for the terminal
-        String dataString = new String(data);
+        //for terminal
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-        intent.putExtra("data", dataString);
+        intent.putExtra("data", data);
         sendBroadcast(intent);
 
         //response buffer to be accessed by service-bound activities

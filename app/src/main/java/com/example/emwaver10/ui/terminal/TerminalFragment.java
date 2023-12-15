@@ -32,8 +32,10 @@ public class TerminalFragment extends Fragment{
     private EditText terminalTextInput;
     private TextView terminalText;
     private TerminalViewModel terminalViewModel;
-    private SerialService serialService;
-    private boolean isBound = false;
+    private boolean filterEnabled = true;
+
+    // In your onCreateView or onCreate method:
+
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -63,6 +65,10 @@ public class TerminalFragment extends Fragment{
             return false;
         });
 
+        binding.filterCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            filterEnabled = isChecked;
+        });
+
         return root;
     }
 
@@ -81,8 +87,21 @@ public class TerminalFragment extends Fragment{
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
-                String dataString = intent.getStringExtra("data");
-                Log.i("terminal", dataString);
+                byte [] data = intent.getByteArrayExtra("data");
+                //Log.i("terminal", dataString);
+                StringBuilder stringBuilder = new StringBuilder();
+
+                for (byte b : data) {
+                    if (filterEnabled || b == 0x0A || b == 0x09 || (b >= 32 && b <= 126)) {
+                        // Append the byte as a character if filter is disabled or it's a printable character, newline, or tab
+                        stringBuilder.append((char) b);
+                    } else {
+                        // Convert non-printable characters to hex string
+                        stringBuilder.append(String.format("[0x%02X]", b));
+                    }
+                }
+
+                String dataString = stringBuilder.toString();
                 terminalViewModel.appendData(dataString); // Update UI by appending the USB data received in TerminalViewModel.
             }
         }

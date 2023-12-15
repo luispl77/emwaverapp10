@@ -12,12 +12,13 @@ public class TerminalViewModel extends ViewModel  {
     }
 
     public void appendData(String data) {
-        if (terminalData.getValue() != null) {
-            terminalData.setValue(terminalData.getValue() + "\n> " + data);
-        } else {
-            terminalData.setValue("> " + data);
+        String currentData = terminalData.getValue();
+        if (currentData == null) {
+            currentData = "";
         }
+        terminalData.setValue(currentData + data);
     }
+
 
     // New method to set data to a specific string
     public void setData(String data) {
