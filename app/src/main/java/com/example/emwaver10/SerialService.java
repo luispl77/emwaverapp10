@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Binder;
@@ -15,7 +16,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.lifecycle.MutableLiveData;
 
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
@@ -23,7 +23,7 @@ import com.hoho.android.usbserial.driver.UsbSerialProber;
 import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -32,6 +32,8 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     private SerialInputOutputManager ioManager;
 
     private UsbSerialPort finalPort = null;
+
+    private UsbDeviceConnection finalConnection = null;
 
     private ConcurrentLinkedQueue<Byte> responseQueue = new ConcurrentLinkedQueue<>();
 
@@ -83,13 +85,27 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Constants.ACTION_CONNECT_USB.equals(intent.getAction())) {
-                // Connect serial device
-                try {
-                    onConnectClick();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                synchronized (this) {
+                    UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            // Permission granted, initiate connection
+                            try {
+                                finalPort = connectUSBSerialDevice(device);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            Toast.makeText(context, "USB Serial Permission Granted", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(context, "USB Serial Permission Denied", Toast.LENGTH_SHORT).show();
+                    }
                 }
-            } else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
+            }else if (Constants.ACTION_INITIATE_USB_CONNECTION.equals(intent.getAction())) {
+                connectUSBSerial(); // Method to start USB connection process
+
+            }else if (Constants.ACTION_SEND_DATA_TO_SERVICE.equals(intent.getAction())) {
                 String userInput = intent.getStringExtra("userInput");
                 // Send the received data over USB.
                 Log.i("service", userInput);
@@ -120,7 +136,15 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         IntentFilter filterBytes = new IntentFilter(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
         registerReceiver(connectReceiver, filterBytes); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
         // todo: fix the security warning about visibility of the broadcast receiver
+
+        IntentFilter filter = new IntentFilter(Constants.ACTION_CONNECT_USB_BOOTLOADER);
+        registerReceiver(connectReceiver, filter);
+
+        IntentFilter filterConnection = new IntentFilter(Constants.ACTION_INITIATE_USB_CONNECTION);
+        registerReceiver(connectReceiver, filterConnection);
     }
+
+
 
     // Callback that runs when the service is started. Not useful for now.
     // START_STICKY: If the service is killed by the system, recreate it, but do not redeliver the last intent. Instead, the system calls onStartCommand with a null intent, unless there are pending intents to start the service. This is suitable for services that are continually running in the background (like music playback) and that don't rely on the intent data.
@@ -138,15 +162,15 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
     @Override
     public void onNewData(byte[] data) {
-        //for terminal
-        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-        intent.putExtra("data", data);
-        sendBroadcast(intent);
-
         //response buffer to be accessed by service-bound activities
         for (int i = 0; i < data.length; i++) {
             addResponseByte(data[i]);
         }
+
+        //for terminal
+        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
+        intent.putExtra("data", data);
+        sendBroadcast(intent);
     }
 
     @Override
@@ -155,30 +179,51 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     }
 
     //Finds the port in which the USB device is connected to. Connects to the driver and returns the port.
-    public UsbSerialPort connectUSBAndReturnPort () throws IOException {
+    public void connectUSBSerial() {
         UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
         List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(manager);
 
         if (availableDrivers.isEmpty()) {
             Toast.makeText(this, "No devices found", Toast.LENGTH_SHORT).show();
-            return null;
+            return;
         }
 
-        // Open a connection to the first available driver.
         UsbSerialDriver driver = availableDrivers.get(0);
+        UsbDevice device = driver.getDevice();
 
-        //USB PERMISSION CODE:
-        int flags = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
-        PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent("com.example.emwaver10.GRANT_USB"), flags);
-        manager.requestPermission(driver.getDevice(), usbPermissionIntent);
+        // Check if permission is already granted
+        if (!manager.hasPermission(device)) {
+            PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(
+                    this,
+                    0,
+                    new Intent(Constants.ACTION_CONNECT_USB)
+                            .putExtra(UsbManager.EXTRA_DEVICE, device),
+                    PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+            );
+            manager.requestPermission(device, usbPermissionIntent);
+        } else {
+            // Permission is already granted, open the device here or handle as needed
+            Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
+            try {
+                finalPort = connectUSBSerialDevice(device);
+                Toast.makeText(this, "Connected!\nDriver: " + finalPort + "\n max pkt size: " + finalPort.getReadEndpoint().getMaxPacketSize(), Toast.LENGTH_LONG).show();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            // You might want to initiate connection here if permission is already granted
+        }
+    }
 
-        UsbDeviceConnection connection = manager.openDevice(driver.getDevice());
+    private UsbSerialPort connectUSBSerialDevice(UsbDevice device) throws IOException {
+        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        UsbDeviceConnection connection = manager.openDevice(device);
         if (connection == null) {
             Toast.makeText(this, "Connection returned null", Toast.LENGTH_SHORT).show();
             return null;
         }
 
-        UsbSerialPort port = driver.getPorts().get(0); // Most devices have just one port (port 0)
+        UsbSerialDriver driver = UsbSerialProber.getDefaultProber().probeDevice(device);
+        UsbSerialPort port = driver.getPorts().get(0); // Assuming there's only one port
         port.open(connection);
         port.setParameters(Constants.USB_BAUD_RATE, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
 
@@ -188,21 +233,41 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         return port;
     }
 
-    //Called from the broadcast done in Serial, when user clicks the connect button.
-    public void onConnectClick() throws IOException {
-        try {
-            finalPort = connectUSBAndReturnPort();
-            if (finalPort != null) {
-                Toast.makeText(this, "Driver: " + finalPort + " max pkt size: " + finalPort.getReadEndpoint().getMaxPacketSize(), Toast.LENGTH_LONG).show();
+
+    public void connectUSBFlash() {
+        final int USB_VENDOR_ID = 1155;   // VID while in DFU mode 0x0483
+        final int USB_PRODUCT_ID = 57105; // PID while in DFU mode 0xDF11
+        UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+
+        boolean deviceFound = false;
+        for (UsbDevice device : deviceList.values()) {
+            if (device.getVendorId() == USB_VENDOR_ID && device.getProductId() == USB_PRODUCT_ID) {
+                deviceFound = true;
+                // Check if permission is already granted
+                if (!manager.hasPermission(device)) {
+                    PendingIntent usbPermissionIntent = PendingIntent.getBroadcast(
+                            this,
+                            0,
+                            new Intent(Constants.ACTION_CONNECT_USB_BOOTLOADER)
+                                    .putExtra(UsbManager.EXTRA_DEVICE, device),
+                            PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0)
+                    );
+                    manager.requestPermission(device, usbPermissionIntent);
+                } else {
+                    // Permission is already granted, handle as needed
+                    Toast.makeText(this, "Permission already granted", Toast.LENGTH_SHORT).show();
+                }
+                break;
             }
-            else{
-                //todo: fix error propagation for when finalPort is null, to avoid null pointer crashes
-                Toast.makeText(this, "No port available", Toast.LENGTH_LONG).show();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        }
+
+        if (!deviceFound) {
+            Toast.makeText(this, "No STM32 bootloader connected", Toast.LENGTH_SHORT).show();
         }
     }
+
+
 
     @Override
     public void onDestroy() {

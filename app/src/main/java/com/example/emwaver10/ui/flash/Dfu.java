@@ -17,6 +17,7 @@
 package com.example.emwaver10.ui.flash;
 
 import android.content.res.AssetManager;
+import android.hardware.usb.UsbDeviceConnection;
 import android.util.Log;
 
 import java.io.InputStream;
@@ -25,6 +26,9 @@ import java.util.List;
 
 @SuppressWarnings("unused")
 public class Dfu {
+    private final static int USB_VENDOR_ID = 1155;   // VID while in DFU mode 0x0483
+    private final static int USB_PRODUCT_ID = 57105; // PID while in DFU mode 0xDF11
+
     private static final String TAG = "Dfu";
     private final static int USB_DIR_OUT = 0;
     private final static int USB_DIR_IN = 128;       //0x80
@@ -96,10 +100,11 @@ public class Dfu {
     private final int deviceVid;
     private final int devicePid;
 
-    private Usb usb;
+
+    private UsbDeviceConnection finalConnection = null;
     private int deviceVersion;  //STM bootloader version
 
-    private final List<DfuListener> listeners = new ArrayList<>();
+    private DfuListener listener;
 
     public interface DfuListener {
         void onStatusMsg(String msg);
@@ -113,30 +118,18 @@ public class Dfu {
         this.context = context;
     }
 
+    public void setListener(final DfuListener listener) {
+        this.listener = listener;
+    }
+
     private void onStatusMsg(final String msg) {
-        for (DfuListener listener : listeners) {
+        if (listener != null) {
             listener.onStatusMsg(msg);
         }
     }
 
-    public void setListener(final DfuListener listener) {
-        if (listener == null) throw new IllegalArgumentException("Listener is null");
-        listeners.add(listener);
-    }
-
-    public void setUsb(Usb usb) {
-        this.usb = usb;
-        if(usb != null)
-            this.deviceVersion = this.usb.getDeviceVersion();
-    }
-
-    // check if usb device is active
-    private boolean isUsbConnected() {
-        if (usb != null && usb.isConnected()) {
-            return true;
-        }
-        onStatusMsg("No device connected");
-        return false;
+    public void setUsbDeviceConnection(UsbDeviceConnection connection) {
+        this.finalConnection = connection;
     }
 
     private void readUnprotect() throws Exception {
@@ -146,7 +139,7 @@ public class Dfu {
     }
 
     private int getStatus(byte[] buffer) throws Exception {
-        int length = usb.controlTransfer(DFU_REQUEST_TYPE_IN, DFU_GETSTATUS, 0, 0, buffer, 6, 500);
+        int length = finalConnection.controlTransfer(DFU_REQUEST_TYPE_IN, DFU_GETSTATUS, 0, 0, buffer, 6, 500);
         if (length < 0) {
             throw new Exception("USB Failed during getStatus");
         } else {
@@ -164,7 +157,7 @@ public class Dfu {
     }
 
     public int clearStatus() throws Exception  {
-        int length = usb.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_CLRSTATUS, 0, 0, null, 0, 5000);
+        int length = finalConnection.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_CLRSTATUS, 0, 0, null, 0, 5000);
         if (length < 0) {
             throw new Exception("error: clear_status() control transfer failed");
         }
@@ -212,7 +205,7 @@ public class Dfu {
         // Assuming wait_idle() is implemented and called here
         waitDownloadIdle();
 
-        int length = usb.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_DNLOAD, 0, 0, massEraseCommand, 1, 50);
+        int length = finalConnection.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_DNLOAD, 0, 0, massEraseCommand, 1, 50);
         if (length < 0) {
             throw new Exception("error: mass_erase() control transfer failed");
         }
@@ -245,7 +238,7 @@ public class Dfu {
     }
 
     public int readBlock(byte[] buffer, int block, int num_bytes) {
-        int length = usb.controlTransfer(DFU_REQUEST_TYPE_IN, DFU_UPLOAD, block, 0, buffer, num_bytes, 500);
+        int length = finalConnection.controlTransfer(DFU_REQUEST_TYPE_IN, DFU_UPLOAD, block, 0, buffer, num_bytes, 500);
         if (length < 0) {
             Log.i("Dfu", "error: read_block() control transfer failed");
         }
@@ -298,7 +291,7 @@ public class Dfu {
         waitDownloadIdle(); // Make sure we are in dfuIDLE or dfuDNLOAD-IDLE state
 
         // Write block control transfer
-        int length = usb.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_DNLOAD, block, 0, buffer, numBytes, 500);
+        int length = finalConnection.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_DNLOAD, block, 0, buffer, numBytes, 500);
         if (length < 0) {
             throw new Exception("error: write_block() control transfer failed");
         }
@@ -340,7 +333,7 @@ public class Dfu {
         waitDownloadIdle(); // Make sure we are in dfuIDLE or dfuDNLOAD-IDLE state
 
         // Set address pointer control transfer
-        int length = usb.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_DNLOAD, 0, 0, buffer, buffer.length, 50);
+        int length = finalConnection.controlTransfer(DFU_REQUEST_TYPE_OUT, DFU_DNLOAD, 0, 0, buffer, buffer.length, 50);
         if (length < 0) {
             throw new Exception("error: set_address_pointer() control transfer failed");
         }

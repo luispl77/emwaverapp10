@@ -23,6 +23,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
+import com.example.emwaver10.R;
 import com.example.emwaver10.SerialService;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
@@ -30,6 +31,7 @@ import com.example.emwaver10.Constants;
 import com.example.emwaver10.jsobjects.Serial;
 import com.example.emwaver10.jsobjects.Console;
 import com.example.emwaver10.databinding.FragmentScriptsBinding;
+import com.example.emwaver10.ui.terminal.TerminalFragment;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -126,6 +128,9 @@ public class ScriptsFragment extends Fragment implements CommandSender {
 
         return root;
     }
+
+
+
 
     private void unbindServiceIfNeeded() {
         if (isServiceBound && !isFragmentActive() && getActivity() != null) {

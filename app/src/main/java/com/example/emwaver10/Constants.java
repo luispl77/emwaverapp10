@@ -2,7 +2,10 @@ package com.example.emwaver10;
 
 public class Constants {
     // Action string for the broadcast when connecting USB
+    public static final String ACTION_INITIATE_USB_CONNECTION = "com.example.myapp.ACTION_INITIATE_USB_CONNECTION";
     public static final String ACTION_CONNECT_USB = "com.example.ACTION_CONNECT_USB";
+
+    public static final String ACTION_CONNECT_USB_BOOTLOADER = "com.example.emwaver10.GRANT_USB";
 
     // Action string for the broadcast when sending data (from terminal) to be transmitted over USB in SerialService
     public static final String ACTION_SEND_DATA_TO_SERVICE = "com.example.ACTION_SEND_DATA_TO_SERVICE";

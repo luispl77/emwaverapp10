@@ -114,8 +114,8 @@ public class TerminalFragment extends Fragment{
         binding.connectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Constants.ACTION_CONNECT_USB);
-                getContext().sendBroadcast(intent); // Send intent over to SerialService to begin USB port connection routine.
+                Intent intent = new Intent(Constants.ACTION_INITIATE_USB_CONNECTION);
+                getContext().sendBroadcast(intent); // Send intent to SerialService to initiate USB connection
             }
         });
         //clear-terminal-text button
