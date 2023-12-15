@@ -1,10 +1,13 @@
 package com.example.emwaver10.ui.terminal;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,6 +23,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.emwaver10.Constants;
+import com.example.emwaver10.SerialService;
 import com.example.emwaver10.databinding.FragmentTerminalBinding;
 
 
@@ -28,6 +32,9 @@ public class TerminalFragment extends Fragment{
     private EditText terminalTextInput;
     private TextView terminalText;
     private TerminalViewModel terminalViewModel;
+    private SerialService serialService;
+    private boolean isBound = false;
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -55,8 +62,11 @@ public class TerminalFragment extends Fragment{
             }
             return false;
         });
+
         return root;
     }
+
+
 
     @Override
     public void onStart() {
