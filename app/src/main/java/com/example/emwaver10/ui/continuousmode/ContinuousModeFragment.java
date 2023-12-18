@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -31,6 +32,7 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.listener.ChartTouchListener;
 import com.github.mikephil.charting.listener.OnChartGestureListener;
 
@@ -63,7 +65,7 @@ public class ContinuousModeFragment extends Fragment {
 
     public ScheduledExecutorService scheduler;
 
-    private final int refreshRate = 200; // Refresh rate in milliseconds
+    private final int refreshRate = 100; // Refresh rate in milliseconds
 
 
 
@@ -219,25 +221,29 @@ public class ContinuousModeFragment extends Fragment {
         return root;
     }
 
-    public void initChart(){
+    public void initChart() {
         // Configure the chart (optional, based on your needs)
         chart.getDescription().setEnabled(false);
         chart.setTouchEnabled(true);
         chart.setPinchZoom(true);
         chart.setScaleYEnabled(false); // Disable Y-axis scaling
-        chart.setScaleXEnabled(true);  // Enable X-axis scalingXAxis xAxis = chart.getXAxis();
+        chart.setScaleXEnabled(true);  // Enable X-axis scaling
 
         XAxis xAxis = chart.getXAxis();
         xAxis.setAxisMinimum(chartMinX); // Start at 0 microseconds
-        xAxis.setAxisMaximum(chartMaxX); // each sample is 26 us in between
+        xAxis.setAxisMaximum(chartMaxX); // End at the maximum X value
 
         YAxis leftAxis = chart.getAxisLeft();
         leftAxis.setAxisMinimum(0); // Set minimum value for the left Y-axis
         leftAxis.setAxisMaximum(255); // Set maximum value for the left Y-axis
+
         YAxis rightAxis = chart.getAxisRight();
-        rightAxis.setAxisMinimum(0); // Set minimum value for the left Y-axis
-        rightAxis.setAxisMaximum(255); // Set maximum value for the left Y-axis
+        rightAxis.setAxisMinimum(0); // Set minimum value for the right Y-axis
+        rightAxis.setAxisMaximum(255); // Set maximum value for the right Y-axis
+
+
     }
+
 
     private void refreshChart() {
         Log.i("refresh", "refreshChart");
@@ -265,8 +271,15 @@ public class ContinuousModeFragment extends Fragment {
         for (int i = 0; i < timeValues.length; i++) {
             entries.add(new Entry(timeValues[i], dataValues[i]));
         }
+        LineDataSet lineDataSet = new LineDataSet(entries, "Demodulator");
+        // Disable the drawing of values for each point
+        lineDataSet.setDrawValues(false);
+        // Increase the line thickness (example: 3f for a thicker line)
+        lineDataSet.setLineWidth(3f);
+        // Set a more pronounced line color (example: Color.BLUE)
+        lineDataSet.setColor(Color.parseColor("#003d99"));
 
-        return new LineDataSet(entries, "Voltage Readings");
+        return lineDataSet;
     }
 
     private void updateChart(LineDataSet lineDataSet) {

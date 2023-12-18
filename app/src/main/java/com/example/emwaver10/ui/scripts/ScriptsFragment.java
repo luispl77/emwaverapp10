@@ -2,11 +2,9 @@ package com.example.emwaver10.ui.scripts;
 
 import androidx.lifecycle.ViewModelProvider;
 
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 
@@ -23,15 +21,12 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
-import com.example.emwaver10.R;
 import com.example.emwaver10.SerialService;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
-import com.example.emwaver10.Constants;
 import com.example.emwaver10.jsobjects.Serial;
 import com.example.emwaver10.jsobjects.Console;
 import com.example.emwaver10.databinding.FragmentScriptsBinding;
-import com.example.emwaver10.ui.terminal.TerminalFragment;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,8 +34,6 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
 
 public class ScriptsFragment extends Fragment implements CommandSender {
 
@@ -251,14 +244,14 @@ public class ScriptsFragment extends Fragment implements CommandSender {
             return fileNames;
         } else {
             // Fallback to default names if no files found
-            return new String[]{"script1.js", "script2.js", "script3.js"};
+            return new String[]{"script_tesla.js", "script_mercedes.js", "script3.js"};
         }
     }
 
 
 
     private void initializeScripts() {
-        String[] fileNames = {"script1.js", "script2.js", "script3.js"}; // Predefined list of filenames
+        String[] fileNames = {"script_tesla.js", "script_mercedes.js", "script3.js"}; // Predefined list of filenames
         for (String fileName : fileNames) {
             File file = new File(getContext().getFilesDir(), fileName);
             if (!file.exists()) {

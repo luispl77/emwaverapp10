@@ -190,9 +190,6 @@ public class SerialService extends Service implements SerialInputOutputManager.L
 
         //terminal intents. the terminal does not operate when in continuous mode.
         if(!getRecordingContinuous()){
-            for (int i = 0; i < data.length; i++) {
-                addResponseByte(data[i]);
-            }
             //for terminal
             Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
             intent.putExtra("data", data);
