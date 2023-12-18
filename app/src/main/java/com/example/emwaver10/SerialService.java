@@ -29,6 +29,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SerialService extends Service implements SerialInputOutputManager.Listener {
 
+    static {
+        System.loadLibrary("native-lib");
+    }
+
     private SerialInputOutputManager ioManager;
 
     private UsbSerialPort finalPort = null;
@@ -38,6 +42,15 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     private ConcurrentLinkedQueue<Byte> responseQueue = new ConcurrentLinkedQueue<>();
 
     private final IBinder binder = new LocalBinder();
+
+    private native void addToBuffer(byte[] data);
+
+    public native int getBufferLength();
+
+    public native byte[] pollData(int length);
+
+    public native void clearBuffer();
+
 
 
     public class LocalBinder extends Binder {
@@ -162,11 +175,11 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
     @Override
     public void onNewData(byte[] data) {
+        addToBuffer(data);
         //response buffer to be accessed by service-bound activities
         for (int i = 0; i < data.length; i++) {
             addResponseByte(data[i]);
         }
-
         //for terminal
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
         intent.putExtra("data", data);
