@@ -358,7 +358,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
         byte[] response = new byte[expectedResponseSize];
         response = serialService.pollData(expectedResponseSize);
 
-        serialService.clearBuffer(); // Optionally clear the queue after processing
+        serialService.clearBuffer(); // Optionally clear the queue after processing (pollData() should already clear the response)
         return response;
     }
 

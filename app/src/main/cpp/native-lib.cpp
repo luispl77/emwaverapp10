@@ -6,15 +6,24 @@ std::vector<char> dataBuffer;
 
 bool isRecording = true;
 
+bool isRecordingContinuous = false;
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_com_example_emwaver10_MainActivity_setRecording(JNIEnv *env, jobject, jboolean recording) {
+JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_setRecording(JNIEnv *env, jobject, jboolean recording) {
     isRecording = recording;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_example_emwaver10_MainActivity_getRecording(JNIEnv *env, jobject) {
+JNIEXPORT jboolean JNICALL Java_com_example_emwaver10_SerialService_getRecording(JNIEnv *env, jobject) {
     return isRecording;
+}
+
+JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_setRecordingContinuous(JNIEnv *env, jobject, jboolean recording) {
+    isRecordingContinuous = recording;
+}
+
+JNIEXPORT jboolean JNICALL Java_com_example_emwaver10_SerialService_getRecordingContinuous(JNIEnv *env, jobject) {
+    return isRecordingContinuous;
 }
 
 JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_addToBuffer(JNIEnv *env, jobject, jbyteArray data) {
@@ -58,7 +67,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_example_emwaver10_SerialService_pollData(J
 }
 
 
-JNIEXPORT jobjectArray JNICALL Java_com_example_emwaver10_MainActivity_compressData(JNIEnv *env, jobject, jint rangeStart, jint rangeEnd, jint numberBins) {
+JNIEXPORT jobjectArray JNICALL Java_com_example_emwaver10_SerialService_compressData(JNIEnv *env, jobject, jint rangeStart, jint rangeEnd, jint numberBins) {
     float totalPointsInRange = rangeEnd - rangeStart;
     std::vector<float> timeValues;
     std::vector<float> dataValues;

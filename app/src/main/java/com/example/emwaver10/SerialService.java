@@ -51,6 +51,16 @@ public class SerialService extends Service implements SerialInputOutputManager.L
 
     public native void clearBuffer();
 
+    public native Object[] compressData(int rangeStart, int rangeEnd, int numberBins);
+
+    public native void setRecording(boolean recording);
+
+    public native boolean getRecording();
+
+    public native boolean getRecordingContinuous();
+
+    public native void setRecordingContinuous(boolean recording);
+
 
 
     public class LocalBinder extends Binder {
@@ -175,15 +185,19 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
     @Override
     public void onNewData(byte[] data) {
+        //cpp environment storing of data
         addToBuffer(data);
-        //response buffer to be accessed by service-bound activities
-        for (int i = 0; i < data.length; i++) {
-            addResponseByte(data[i]);
+
+        //terminal intents. the terminal does not operate when in continuous mode.
+        if(!getRecordingContinuous()){
+            for (int i = 0; i < data.length; i++) {
+                addResponseByte(data[i]);
+            }
+            //for terminal
+            Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
+            intent.putExtra("data", data);
+            sendBroadcast(intent);
         }
-        //for terminal
-        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-        intent.putExtra("data", data);
-        sendBroadcast(intent);
     }
 
     @Override
