@@ -94,7 +94,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
             try {
                 finalPort.write(bytes, 2000);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                Log.e("SerialService", "Error writing to port: ", e);
             }
         }
         else{
@@ -141,8 +141,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
                         Toast.makeText(context, "No devices found", Toast.LENGTH_SHORT).show();
                     }
                 } catch (IOException e) {
-                    Log.i("ser", "no port" + userInput);
-                    throw new RuntimeException(e);
+                    Log.e("SerialService", "Error writing to port: ", e);
                 }
             }
         }
@@ -189,12 +188,16 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         addToBuffer(data);
 
         //terminal intents. the terminal does not operate when in continuous mode.
-        if(!getRecordingContinuous()){
+        /*if(!getRecordingContinuous()){
             //for terminal
-            Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-            intent.putExtra("data", data);
-            sendBroadcast(intent);
-        }
+           sendIntentToTerminal(data);
+        }*/
+    }
+
+    public void sendIntentToTerminal(byte[] data) {
+        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
+        intent.putExtra("data", data);
+        sendBroadcast(intent);
     }
 
     @Override

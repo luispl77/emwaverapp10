@@ -246,7 +246,7 @@ public class ContinuousModeFragment extends Fragment {
 
 
     private void refreshChart() {
-        Log.i("refresh", "refreshChart");
+        //Log.i("refresh", "refreshChart");
         if(serialService.getRecording()){
             // Get the current visible range
             int visibleRangeStart = (int) chart.getLowestVisibleX();
@@ -331,8 +331,5 @@ public class ContinuousModeFragment extends Fragment {
             scheduler.shutdownNow();
         }
     }
-
-
-
 
 }

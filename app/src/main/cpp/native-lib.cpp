@@ -26,16 +26,24 @@ JNIEXPORT jboolean JNICALL Java_com_example_emwaver10_SerialService_getRecording
     return isRecordingContinuous;
 }
 
-JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_addToBuffer(JNIEnv *env, jobject, jbyteArray data) {
-    if (!isRecording) {
-        return;
-    }
+JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_sendIntentToTerminalNative(JNIEnv *env, jobject javaService, jbyteArray data) {
+    jclass serviceClass = env->GetObjectClass(javaService);
+    jmethodID sendIntentMethod = env->GetMethodID(serviceClass, "sendIntentToTerminal", "([B)V");
+
+    env->CallVoidMethod(javaService, sendIntentMethod, data);
+}
+
+JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_addToBuffer(JNIEnv *env, jobject serialService, jbyteArray data) {
 
     jbyte* bufferPtr = env->GetByteArrayElements(data, nullptr);
     jsize lengthOfArray = env->GetArrayLength(data);
 
     dataBuffer.insert(dataBuffer.end(), bufferPtr, bufferPtr + lengthOfArray);
     env->ReleaseByteArrayElements(data, bufferPtr, JNI_ABORT);
+
+    if (!isRecordingContinuous) {
+        Java_com_example_emwaver10_SerialService_sendIntentToTerminalNative(env, serialService, data);
+    }
 }
 
 JNIEXPORT jint JNICALL Java_com_example_emwaver10_SerialService_getBufferLength(JNIEnv *env, jobject) {
@@ -45,6 +53,8 @@ JNIEXPORT jint JNICALL Java_com_example_emwaver10_SerialService_getBufferLength(
 JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_clearBuffer(JNIEnv *env, jobject) {
     dataBuffer.clear();
 }
+
+
 
 
 JNIEXPORT jbyteArray JNICALL Java_com_example_emwaver10_SerialService_pollData(JNIEnv *env, jobject, jint length) {
