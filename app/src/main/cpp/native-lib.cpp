@@ -10,13 +10,6 @@ bool isRecordingContinuous = false;
 
 extern "C" {
 
-JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_setRecording(JNIEnv *env, jobject, jboolean recording) {
-    isRecording = recording;
-}
-
-JNIEXPORT jboolean JNICALL Java_com_example_emwaver10_SerialService_getRecording(JNIEnv *env, jobject) {
-    return isRecording;
-}
 
 JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_setRecordingContinuous(JNIEnv *env, jobject, jboolean recording) {
     isRecordingContinuous = recording;

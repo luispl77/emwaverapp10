@@ -32,35 +32,16 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     static {
         System.loadLibrary("native-lib");
     }
-
     private SerialInputOutputManager ioManager;
-
     private UsbSerialPort finalPort = null;
-
-    private UsbDeviceConnection finalConnection = null;
-
-    private ConcurrentLinkedQueue<Byte> responseQueue = new ConcurrentLinkedQueue<>();
-
     private final IBinder binder = new LocalBinder();
-
     private native void addToBuffer(byte[] data);
-
     public native int getBufferLength();
-
     public native byte[] pollData(int length);
-
     public native void clearBuffer();
-
     public native Object[] compressData(int rangeStart, int rangeEnd, int numberBins);
-
-    public native void setRecording(boolean recording);
-
-    public native boolean getRecording();
-
     public native boolean getRecordingContinuous();
-
     public native void setRecordingContinuous(boolean recording);
-
 
 
     public class LocalBinder extends Binder {
@@ -70,24 +51,6 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         }
     }
 
-    public void addResponseByte(Byte responseByte) {
-        responseQueue.add(responseByte);
-    }
-    // Method to retrieve and clear data from the queue
-    public byte[] getAndClearResponse(int expectedSize) {
-        byte[] response = new byte[expectedSize];
-        for (int i = 0; i < expectedSize; i++) {
-            response[i] = responseQueue.poll(); // or handle nulls if necessary
-        }
-        return response;
-    }
-    public ConcurrentLinkedQueue<Byte> getResponseQueue() {
-        return responseQueue;
-    }
-    // Method to clear the queue, if needed
-    public void clearResponseQueue() {
-        responseQueue.clear();
-    }
 
     public void write(byte[] bytes){
         if(bytes != null && finalPort != null) {
@@ -102,8 +65,31 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         }
     }
 
+    public void emptyReadBuffer() {
+        // Assuming a reasonable buffer size for each read operation
+        if(finalPort == null){
+            Toast.makeText(this, "No USB device connected", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-    // Register the BroadcastReceiver
+        byte[] buf = new byte[8192];
+        try {
+            int bytesRead = 1;
+            // Continue reading as long as data is available
+            while (bytesRead > 0) {
+                bytesRead = finalPort.read(buf, 500);
+                if(bytesRead > 0){
+                    Log.i("SerialService", "emptied " + bytesRead + " bytes from read buffer");
+                }
+            }
+        } catch (IOException e) {
+            Log.e("SerialService", "Error reading while emptying buffer", e);
+        }
+    }
+
+
+
+
     private final BroadcastReceiver connectReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -147,63 +133,16 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         }
     };
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        // Register receivers for listening for broadcasts from Serial fragment.
-        IntentFilter filterConnectButton = new IntentFilter(Constants.ACTION_CONNECT_USB);
-        registerReceiver(connectReceiver, filterConnectButton); // Receiver for the connect button in terminal.
-        IntentFilter filterData = new IntentFilter(Constants.ACTION_SEND_DATA_TO_SERVICE);
-        registerReceiver(connectReceiver, filterData); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
-        IntentFilter filterBytes = new IntentFilter(Constants.ACTION_SEND_DATA_BYTES_TO_SERVICE);
-        registerReceiver(connectReceiver, filterBytes); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
-        // todo: fix the security warning about visibility of the broadcast receiver
-
-        IntentFilter filter = new IntentFilter(Constants.ACTION_CONNECT_USB_BOOTLOADER);
-        registerReceiver(connectReceiver, filter);
-
-        IntentFilter filterConnection = new IntentFilter(Constants.ACTION_INITIATE_USB_CONNECTION);
-        registerReceiver(connectReceiver, filterConnection);
-    }
 
 
 
-    // Callback that runs when the service is started. Not useful for now.
-    // START_STICKY: If the service is killed by the system, recreate it, but do not redeliver the last intent. Instead, the system calls onStartCommand with a null intent, unless there are pending intents to start the service. This is suitable for services that are continually running in the background (like music playback) and that don't rely on the intent data.
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY;
-    }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return binder;
-    }
-
-    //Called when new data arrives on the USB port that is connected. Sends the data over to the TerminalViewModel to update UI and show the communication.
+    //Called when new data arrives on the USB port that is connected. Stores date in buffer in c++ environment
     @Override
     public void onNewData(byte[] data) {
-        //cpp environment storing of data
         addToBuffer(data);
-
-        //terminal intents. the terminal does not operate when in continuous mode.
-        /*if(!getRecordingContinuous()){
-            //for terminal
-           sendIntentToTerminal(data);
-        }*/
     }
 
-    public void sendIntentToTerminal(byte[] data) {
-        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
-        intent.putExtra("data", data);
-        sendBroadcast(intent);
-    }
 
-    @Override
-    public void onRunError(Exception e) {
-
-    }
 
     //Finds the port in which the USB device is connected to. Connects to the driver and returns the port.
     public void connectUSBSerial() {
@@ -294,12 +233,52 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         }
     }
 
+    public void sendIntentToTerminal(byte[] data) {
+        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
+        intent.putExtra("data", data);
+        sendBroadcast(intent);
+    }
 
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Register receivers for listening for broadcasts from Serial fragment.
+        IntentFilter filterConnectButton = new IntentFilter(Constants.ACTION_CONNECT_USB);
+        registerReceiver(connectReceiver, filterConnectButton); // Receiver for the connect button in terminal.
+        IntentFilter filter = new IntentFilter(Constants.ACTION_CONNECT_USB_BOOTLOADER);
+        registerReceiver(connectReceiver, filter);
+        IntentFilter filterConnection = new IntentFilter(Constants.ACTION_INITIATE_USB_CONNECTION);
+        registerReceiver(connectReceiver, filterConnection);
+
+        IntentFilter filterData = new IntentFilter(Constants.ACTION_SEND_DATA_TO_SERVICE);
+        registerReceiver(connectReceiver, filterData); // Receiver for the data inputted in terminal fragment and entered, to then be sent over USB.
+    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(connectReceiver); //will this ever be destroyed? perhaps when app closes.
     }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
+    }
+
+
+    @Override
+    public void onRunError(Exception e) {
+
+    }
+
+    // Callback that runs when the service is started. Not useful for now.
+    // START_STICKY: If the service is killed by the system, recreate it, but do not redeliver the last intent. Instead, the system calls onStartCommand with a null intent, unless there are pending intents to start the service. This is suitable for services that are continually running in the background (like music playback) and that don't rely on the intent data.
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
+
 
 }

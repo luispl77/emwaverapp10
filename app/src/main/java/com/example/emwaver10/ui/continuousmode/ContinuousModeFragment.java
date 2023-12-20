@@ -63,6 +63,7 @@ public class ContinuousModeFragment extends Fragment {
     private int prevRangeStart = 0;
     private int prevRangeEnd = 0;
 
+
     public ScheduledExecutorService scheduler;
 
     private final int refreshRate = 100; // Refresh rate in milliseconds
@@ -78,6 +79,7 @@ public class ContinuousModeFragment extends Fragment {
             serialService = binder.getService();
             isServiceBound = true;
             Log.i("service binding", "onServiceConnected");
+            //updateChart(compressDataAndGetDataSet(0, serialService.getBufferLength(), 1000));
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
@@ -123,7 +125,6 @@ public class ContinuousModeFragment extends Fragment {
             byte[] byteArray = contCommand.getBytes();
             serialService.setRecordingContinuous(true);
             serialService.write(byteArray);
-            serialService.setRecording(true);
 
         });
 
@@ -131,17 +132,20 @@ public class ContinuousModeFragment extends Fragment {
             String contCommand = "ssss";
             byte[] byteArray = contCommand.getBytes();
             serialService.write(byteArray);
-            //serialService.setRecording(false);
-            serialService.setRecordingContinuous(false);
+            new Thread(() -> {
+                serialService.emptyReadBuffer(); //this function busy waits
+                serialService.setRecordingContinuous(false); //wait before the buffer is empty
+            }).start();
+
             chartMaxX = serialService.getBufferLength();
             XAxis xAxis = chart.getXAxis();
             xAxis.setAxisMinimum(chartMinX); // Start at 0 microseconds
             xAxis.setAxisMaximum(chartMaxX);
-            updateChart(compressDataAndGetDataSet(0, serialService.getBufferLength(), 1000));
+            updateChart(compressDataAndGetDataSet(continuousmodeViewModel.getVisibleRangeStart(), continuousmodeViewModel.getVisibleRangeEnd(), 1000));
         });
 
         initChart();
-        //refreshChart();
+
 
 
         chart.setOnChartGestureListener(new OnChartGestureListener() {
@@ -179,22 +183,26 @@ public class ContinuousModeFragment extends Fragment {
             @Override
             public void onChartScale(MotionEvent me, float scaleX, float scaleY) {
                 float newZoomLevel = chart.getScaleX();
-                if (Math.abs(newZoomLevel - currentZoomLevel) >= 0.5f && newZoomLevel < 200) {
+                if (Math.abs(newZoomLevel - currentZoomLevel) >= (newZoomLevel/10)) {
                     // Zoom level changed significantly
                     currentZoomLevel = newZoomLevel;
 
-                    int visibleRangeStart = (int) chart.getLowestVisibleX();
-                    int visibleRangeEnd = (int) chart.getHighestVisibleX();
+                    continuousmodeViewModel.setVisibleRangeStart((int) chart.getLowestVisibleX());
+                    continuousmodeViewModel.setVisibleRangeEnd((int) chart.getHighestVisibleX());
 
-                    updateChart(compressDataAndGetDataSet(visibleRangeStart, visibleRangeEnd, 1000));
+                    updateChart(compressDataAndGetDataSet(continuousmodeViewModel.getVisibleRangeStart(), continuousmodeViewModel.getVisibleRangeEnd(), 1000));
                 }
             }
             @Override
             public void onChartTranslate(MotionEvent me, float dX, float dY) {
                 int visibleRangeStart = (int) chart.getLowestVisibleX();
                 int visibleRangeEnd = (int) chart.getHighestVisibleX();
-                float translationThreshold = 500 / chart.getScaleX(); // Define an appropriate threshold value
-                int span = visibleRangeEnd -visibleRangeStart;
+                continuousmodeViewModel.setVisibleRangeStart(visibleRangeStart);
+                continuousmodeViewModel.setVisibleRangeEnd(visibleRangeStart);
+
+                int span = visibleRangeEnd - visibleRangeStart;
+                float translationThreshold = (float)span / 100; // Define an appropriate threshold value
+
 
                 // Check if the chart is at its boundaries
                 if ((visibleRangeStart<= chartMinX && dX > 0) || (visibleRangeEnd >= chartMaxX && dX < 0)) {
@@ -246,15 +254,17 @@ public class ContinuousModeFragment extends Fragment {
 
 
     private void refreshChart() {
-        //Log.i("refresh", "refreshChart");
-        if(serialService.getRecording()){
+        if(serialService.getRecordingContinuous()){
             // Get the current visible range
             int visibleRangeStart = (int) chart.getLowestVisibleX();
             int visibleRangeEnd = (int) chart.getHighestVisibleX();
+            continuousmodeViewModel.setVisibleRangeStart((int) chart.getLowestVisibleX());
+            continuousmodeViewModel.setVisibleRangeEnd((int) chart.getHighestVisibleX());
+
             chartMaxX = serialService.getBufferLength();
             XAxis xAxis = chart.getXAxis();
-            xAxis.setAxisMinimum(chartMinX); // Start at 0 microseconds
-            xAxis.setAxisMaximum(chartMaxX); //
+            xAxis.setAxisMinimum(chartMinX);
+            xAxis.setAxisMaximum(chartMaxX);
             // Update the chart
             getActivity().runOnUiThread(() -> updateChart(compressDataAndGetDataSet(visibleRangeStart, visibleRangeEnd, 1000)));
         }
@@ -308,7 +318,6 @@ public class ContinuousModeFragment extends Fragment {
             Intent intent = new Intent(getActivity(), SerialService.class);
             getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         }
-
     }
 
     @Override
@@ -322,6 +331,7 @@ public class ContinuousModeFragment extends Fragment {
         super.onResume();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(this::refreshChart, 0, refreshRate, TimeUnit.MILLISECONDS);
+
     }
 
     @Override
