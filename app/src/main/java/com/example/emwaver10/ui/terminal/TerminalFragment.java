@@ -32,6 +32,7 @@ public class TerminalFragment extends Fragment{
     private EditText terminalTextInput;
     private TextView terminalText;
     private TerminalViewModel terminalViewModel;
+
     private boolean filterEnabled = true;
 
     // In your onCreateView or onCreate method:
@@ -59,7 +60,7 @@ public class TerminalFragment extends Fragment{
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 String userInput = terminalTextInput.getText().toString();
                 sendUserInputToService(userInput); // Send to SerialService for transmitting over USB
-                terminalViewModel.appendData(userInput);
+                terminalViewModel.appendData(userInput+"\n");
                 terminalTextInput.setText("");
             }
             return false;
@@ -84,28 +85,37 @@ public class TerminalFragment extends Fragment{
 
     // Broadcast receiver for data coming from SerialService background USB service. Updates terminal live UI.
     private final BroadcastReceiver usbDataReceiver = new BroadcastReceiver() {
+        private StringBuilder buffer = new StringBuilder();
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Constants.ACTION_USB_DATA_RECEIVED.equals(intent.getAction())) {
-                byte [] data = intent.getByteArrayExtra("data");
-                //Log.i("terminal", dataString);
-                StringBuilder stringBuilder = new StringBuilder();
+                byte[] data = intent.getByteArrayExtra("data");
 
-                for (byte b : data) {
-                    if (filterEnabled || b == 0x0A || b == 0x09 || (b >= 32 && b <= 126)) {
-                        // Append the byte as a character if filter is disabled or it's a printable character, newline, or tab
-                        stringBuilder.append((char) b);
-                    } else {
-                        // Convert non-printable characters to hex string
-                        stringBuilder.append(String.format("[0x%02X]", b));
-                    }
+                if (filterEnabled) {
+                    buffer.append(new String(data)); // Append new data to the buffer
+                    processBufferForStrings();      // Process buffer for strings encapsulated within <STR> and </STR>
+                } else {
+                    displayAllData(data);           // Display all data as it is
                 }
-
-                String dataString = stringBuilder.toString();
-                terminalViewModel.appendData(dataString); // Update UI by appending the USB data received in TerminalViewModel.
             }
         }
+        private void processBufferForStrings() {
+            int startIdx;
+            int endIdx;
+
+            while ((startIdx = buffer.indexOf("<STR>")) != -1 && (endIdx = buffer.indexOf("</STR>", startIdx)) != -1) {
+                String message = buffer.substring(startIdx + "<STR>".length(), endIdx);
+                terminalViewModel.appendData(message); // Append the complete message to the ViewModel
+                buffer.delete(0, endIdx + "</STR>".length()); // Remove processed message
+            }
+        }
+        private void displayAllData(byte[] data) {
+            String dataString = new String(data);
+            terminalViewModel.appendData(dataString);
+        }
     };
+
+
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {

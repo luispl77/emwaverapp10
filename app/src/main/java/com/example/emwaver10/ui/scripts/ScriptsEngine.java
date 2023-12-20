@@ -46,27 +46,30 @@ public class ScriptsEngine{
     }
 
 
-    public void executeJavaScript(String script) {
+    public String executeJavaScript(String script) {
+        String errorMessage = null;
+
         try {
             rhino = Context.enter();
             rhino.setOptimizationLevel(-1);
             scope = rhino.initStandardObjects();
-            // Make entire CC1101 class accessible from javascript
-            Object wrappedCC = Context.javaToJS(cc1101, scope);
-            ScriptableObject.putProperty(scope, "CC1101", wrappedCC);
-            // Make entire Serial class accessible from javascript
-            Object wrappedSerial = Context.javaToJS(serial, scope);
-            ScriptableObject.putProperty(scope, "Serial", wrappedSerial);
-            // Make entire Console class accessible from javascript
-            Object wrappedConsole = Context.javaToJS(console, scope);
-            ScriptableObject.putProperty(scope, "Console", wrappedConsole);
+
+            // Make entire CC1101, Serial, and Console classes accessible from javascript
+            ScriptableObject.putProperty(scope, "CC1101", Context.javaToJS(cc1101, scope));
+            ScriptableObject.putProperty(scope, "Serial", Context.javaToJS(serial, scope));
+            ScriptableObject.putProperty(scope, "Console", Context.javaToJS(console, scope));
+
             // Execute the JavaScript script
             rhino.evaluateString(scope, script, "JavaScript", 1, null);
         } catch (RhinoException e) {
             e.printStackTrace();
+            errorMessage = e.getMessage();
         } finally {
             Context.exit();
         }
+
+        // Return the error message, or null if there was no error
+        return errorMessage;
     }
 
 }

@@ -21,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
+import com.example.emwaver10.Constants;
 import com.example.emwaver10.SerialService;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
@@ -110,7 +111,9 @@ public class ScriptsFragment extends Fragment implements CommandSender {
                     try {
                         String jsCode = binding.jsCodeInput.getText().toString();
                         ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel, serial, console);
-                        scriptsEngine.executeJavaScript(jsCode);
+                        String result = scriptsEngine.executeJavaScript(jsCode);
+                        if(result != null)
+                            sendExecutionResult(result);
                     } finally {
                         unbindServiceIfNeeded();
                     }
@@ -122,6 +125,17 @@ public class ScriptsFragment extends Fragment implements CommandSender {
         return root;
     }
 
+
+    private void sendExecutionResult(String message) {
+        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
+
+        // Convert the message to bytes
+        String messageWithTags = "<STR>" + message + "</STR>";
+        byte[] messageBytes = messageWithTags.getBytes();
+
+        intent.putExtra("data", messageBytes);
+        requireActivity().sendBroadcast(intent);
+    }
 
 
 
