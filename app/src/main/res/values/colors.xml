@@ -9,4 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="blue">#002966</color>
     <color name="blue_lighter">#003d99</color>
+    <color name="serial_data">#4CAF50</color>             <!-- Green -->
+    <color name="user_input">#003d99</color>              <!-- Blue -->
+    <color name="javascript_environment">#E91E63</color>  <!-- Pink -->
+    <color name="system_messages">#FFEB3B</color>         <!-- Yellowish -->
+
 </resources>

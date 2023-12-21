@@ -418,6 +418,30 @@ public class CC1101 {
         return Arrays.equals(syncword, readBack);
     }
 
+    public boolean setPktLength(int length){
+        byte pktlen = (byte)length;
+        writeReg(CC1101_PKTLEN, pktlen);
+        //verify
+        return readReg(CC1101_PKTLEN) == pktlen;
+    }
+
+    public boolean getGDO() {
+        byte[] command = {'g', 'd', 'o', '0'}; // Replace with your actual command
+        int expectedLength = 4; // Expected length of the response; adjust as needed
+        byte[] response = commandSender.sendCommandAndGetResponse(command, expectedLength, 1, 1000);
+
+        if (response != null) {
+            Log.i("Command Response", Arrays.toString(response));
+            String responseString = new String(response).trim(); // Convert byte[] to String and trim any trailing whitespaces
+
+            // Compare the response string
+            return responseString.equals("HIGH");
+        }
+
+        return false;
+    }
+
+
 
     public String bytesToHexString(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();

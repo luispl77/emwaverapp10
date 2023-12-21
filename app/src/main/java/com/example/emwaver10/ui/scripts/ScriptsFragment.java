@@ -28,6 +28,7 @@ import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.jsobjects.Serial;
 import com.example.emwaver10.jsobjects.Console;
 import com.example.emwaver10.databinding.FragmentScriptsBinding;
+import com.example.emwaver10.jsobjects.Utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,6 +43,7 @@ public class ScriptsFragment extends Fragment implements CommandSender {
     private CC1101 cc1101;
     private Serial serial;
     private Console console;
+    private Utils utils;
     private FragmentScriptsBinding binding; // Binding class for the fragment_scripts.xml layout
     private SerialService serialService;
     private boolean isServiceBound = false;
@@ -78,6 +80,8 @@ public class ScriptsFragment extends Fragment implements CommandSender {
 
         console = new Console(getContext());
 
+        utils = new Utils(getContext());
+
         initializeScripts();
 
 
@@ -110,7 +114,7 @@ public class ScriptsFragment extends Fragment implements CommandSender {
 
                     try {
                         String jsCode = binding.jsCodeInput.getText().toString();
-                        ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel, serial, console);
+                        ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel, serial, console, utils);
                         String result = scriptsEngine.executeJavaScript(jsCode);
                         if(result != null)
                             sendExecutionResult(result);
@@ -130,10 +134,11 @@ public class ScriptsFragment extends Fragment implements CommandSender {
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
 
         // Convert the message to bytes
-        String messageWithTags = "<STR>" + message + "</STR>";
+        String messageWithTags = "ERROR: " + message + "\n";
         byte[] messageBytes = messageWithTags.getBytes();
 
         intent.putExtra("data", messageBytes);
+        intent.putExtra("source", "javascript"); // Add this line; "system" is an example, replace with actual source
         requireActivity().sendBroadcast(intent);
     }
 
@@ -258,14 +263,14 @@ public class ScriptsFragment extends Fragment implements CommandSender {
             return fileNames;
         } else {
             // Fallback to default names if no files found
-            return new String[]{"script_tesla.js", "script_mercedes.js", "script3.js"};
+            return new String[]{"script_tesla.js", "script_mercedes.js", "script_receive_tesla.js"};
         }
     }
 
 
 
     private void initializeScripts() {
-        String[] fileNames = {"script_tesla.js", "script_mercedes.js", "script3.js"}; // Predefined list of filenames
+        String[] fileNames = {"script_tesla.js", "script_mercedes.js", "script_receive_tesla.js"}; // Predefined list of filenames
         for (String fileName : fileNames) {
             File file = new File(getContext().getFilesDir(), fileName);
             if (!file.exists()) {

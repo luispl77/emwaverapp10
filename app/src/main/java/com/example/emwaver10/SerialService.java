@@ -236,6 +236,7 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     public void sendIntentToTerminal(byte[] data) {
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
         intent.putExtra("data", data);
+        intent.putExtra("source", "serial");
         sendBroadcast(intent);
     }
 

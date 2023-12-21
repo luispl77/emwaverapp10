@@ -3,6 +3,7 @@ package com.example.emwaver10.ui.scripts;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.jsobjects.Console;
 import com.example.emwaver10.jsobjects.Serial;
+import com.example.emwaver10.jsobjects.Utils;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.RhinoException;
@@ -35,14 +36,17 @@ public class ScriptsEngine{
 
     private Console console;
 
+    private Utils utils;
+
     private ScriptsViewModel scriptsViewModel;
     private static final String SCRIPT = "function evaluate(arithmetic){ return eval(arithmetic); }";
 
-    public ScriptsEngine(CC1101 cc1101, ScriptsViewModel scriptsViewModel, Serial serial, Console console) {
+    public ScriptsEngine(CC1101 cc1101, ScriptsViewModel scriptsViewModel, Serial serial, Console console, Utils utils) {
         this.cc1101 = cc1101;
         this.scriptsViewModel = scriptsViewModel;
         this.serial = serial;
         this.console = console;
+        this.utils = utils;
     }
 
 
@@ -58,6 +62,7 @@ public class ScriptsEngine{
             ScriptableObject.putProperty(scope, "CC1101", Context.javaToJS(cc1101, scope));
             ScriptableObject.putProperty(scope, "Serial", Context.javaToJS(serial, scope));
             ScriptableObject.putProperty(scope, "Console", Context.javaToJS(console, scope));
+            ScriptableObject.putProperty(scope, "Utils", Context.javaToJS(utils, scope));
 
             // Execute the JavaScript script
             rhino.evaluateString(scope, script, "JavaScript", 1, null);

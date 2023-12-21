@@ -25,11 +25,13 @@ public class Console {
     public void print(String dataString) {
         Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
 
+        String encapsulated = dataString;
         // Convert the string back to a byte array
-        byte[] dataBytes = dataString.getBytes();
+        byte[] dataBytes = encapsulated.getBytes();
 
         // Put the byte array into the intent
         intent.putExtra("data", dataBytes);
+        intent.putExtra("source", "javascript");
 
         context.sendBroadcast(intent);
     }
