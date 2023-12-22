@@ -1,6 +1,7 @@
 //script 3
 
 function initReceive() {
+    CC1101.spiStrobe(0x30);
     CC1101.sendInitRx();
     CC1101.setNumPreambleBytes(1);
     CC1101.setModulation(3);
@@ -15,7 +16,7 @@ function initReceive() {
 
 function getTeslaSignal() {
     var i = 0;
-    while(i < 10){
+    while(i < 5){
         if(CC1101.getGDO() == true){
          var receivedBytes = CC1101.receiveData();
                 if(receivedBytes != null){

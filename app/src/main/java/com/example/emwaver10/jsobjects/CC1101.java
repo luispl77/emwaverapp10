@@ -223,6 +223,16 @@ public class CC1101 {
         }
     }
 
+    public void sendInitRxContinuous(){
+        byte[] command = {'r', 'x', 'c', 'o', 'n', 't'}; // Replace with your actual command
+        String responseString = "<STR>Continuous mode 433/Rx values init done\n</STR>";
+        int length = responseString.length();
+        byte[] response = commandSender.sendCommandAndGetResponse(command, length, 1, 1000);
+        if (response != null) {
+            Log.i("Command Response", Arrays.toString(response));
+        }
+    }
+
     public boolean setDataRate(int bitRate) {
         // Constants for the DRATE register calculation
         final double F_OSC = 26_000_000; // Oscillator frequency in Hz

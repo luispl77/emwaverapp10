@@ -1,5 +1,6 @@
 package com.example.emwaver10;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -238,6 +239,23 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         intent.putExtra("data", data);
         intent.putExtra("source", "serial");
         sendBroadcast(intent);
+    }
+
+    public void sendStringIntent(String string, String source){
+        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
+        // Convert the message to bytes
+        byte[] messageBytes = string.getBytes();
+
+        intent.putExtra("data", messageBytes);
+        intent.putExtra("source", source); // Add this line; "system" is an example, replace with actual source
+        this.sendBroadcast(intent);
+    }
+
+    public void changeStatus(String status) {
+        Intent intent = new Intent(Constants.ACTION_UPDATE_STATUS);
+        // Convert the message to bytes
+        intent.putExtra("status", status);
+        this.sendBroadcast(intent);
     }
 
 

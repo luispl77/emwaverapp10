@@ -21,10 +21,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.example.emwaver10.CommandSender;
 import com.example.emwaver10.R;
 import com.example.emwaver10.SerialService;
 import com.example.emwaver10.databinding.FragmentContinuousModeBinding;
 import com.example.emwaver10.databinding.FragmentScriptsBinding;
+import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.ui.scripts.ScriptsViewModel;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -43,7 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class ContinuousModeFragment extends Fragment {
+public class ContinuousModeFragment extends Fragment implements CommandSender {
 
     private ContinuousModeViewModel continuousmodeViewModel;
 
@@ -62,6 +64,8 @@ public class ContinuousModeFragment extends Fragment {
 
     private int prevRangeStart = 0;
     private int prevRangeEnd = 0;
+
+    private CC1101 cc;
 
 
     public ScheduledExecutorService scheduler;
@@ -102,11 +106,23 @@ public class ContinuousModeFragment extends Fragment {
 
         chart = binding.chart;
 
+        CC1101 cc = new CC1101(this);
+
         continuousmodeViewModel = new ViewModelProvider(this).get(ContinuousModeViewModel.class);
 
         binding.connectButton.setOnClickListener(v -> {
             serialService.connectUSBSerial();
             //updateVisibleRange();
+        });
+
+        binding.initContinuousButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new Thread(() -> {
+                    cc.sendInitRxContinuous();
+                    //showToastOnUiThread("check terminal");
+                }).start();
+            }
         });
 
         binding.getBufferLengthButton.setOnClickListener(v -> {
@@ -118,6 +134,7 @@ public class ContinuousModeFragment extends Fragment {
         binding.clearBufferButton.setOnClickListener(v -> {
             serialService.clearBuffer();
             Toast.makeText(getContext(), "buffer cleared" , Toast.LENGTH_SHORT).show();
+            updateChart(compressDataAndGetDataSet(continuousmodeViewModel.getVisibleRangeStart(), continuousmodeViewModel.getVisibleRangeEnd(), 1000));
         });
 
         binding.startRecordingButton.setOnClickListener(v -> {
@@ -342,4 +359,33 @@ public class ContinuousModeFragment extends Fragment {
         }
     }
 
+    @Override
+    public byte[] sendCommandAndGetResponse(byte[] command, int expectedResponseSize, int busyDelay, long timeoutMillis) {
+        // Send the command
+        if(isServiceBound){
+            serialService.write(command);
+        }
+
+        long startTime = System.currentTimeMillis(); // Start time for timeout
+
+        // Wait for the response with timeout
+        while (isServiceBound && serialService.getBufferLength() < expectedResponseSize) {
+            if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                return null; // Timeout occurred
+            }
+            try {
+                Thread.sleep(busyDelay); // Wait for it to arrive
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }
+
+        // Retrieve the response
+        byte[] response = new byte[expectedResponseSize];
+        response = serialService.pollData(expectedResponseSize);
+
+        serialService.clearBuffer(); // Optionally clear the queue after processing (pollData() should already clear the response)
+        return response;
+    }
 }

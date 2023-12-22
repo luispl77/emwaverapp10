@@ -78,7 +78,7 @@ public class TerminalFragment extends Fragment{
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 String userInput = terminalTextInput.getText().toString();
                 sendUserInputToService(userInput); // Send to SerialService for transmitting over USB
-                terminalViewModel.appendData(userInput+"\n", ContextCompat.getColor(getContext(), R.color.user_input));
+                terminalViewModel.appendData(userInput+"\n>", ContextCompat.getColor(getContext(), R.color.user_input));
                 terminalTextInput.setText("");
             }
             return false;
@@ -118,10 +118,13 @@ public class TerminalFragment extends Fragment{
                     }
                 }
                 else if(Objects.equals(source, "javascript")){
-                    terminalViewModel.appendData(">"  + new String(data), ContextCompat.getColor(getContext(), R.color.javascript_environment));
+                    terminalViewModel.appendData(new String(data), ContextCompat.getColor(getContext(), R.color.javascript_environment));
                 }
                 else if(Objects.equals(source, "system")){
                     terminalViewModel.appendData(new String(data), ContextCompat.getColor(getContext(), R.color.system_messages));
+                }
+                else if(Objects.equals(source, "user_input")){
+                    terminalViewModel.appendData(new String(data), ContextCompat.getColor(getContext(), R.color.user_input));
                 }
             }
         }

@@ -18,6 +18,8 @@ public class Constants {
     // Action byte array for the broadcast when data is received from USB
     public static final String ACTION_USB_DATA_BYTES_RECEIVED = "com.example.ACTION_USB_DATA_BYTES";
 
+    public static final String ACTION_UPDATE_STATUS = "com.example.UPDATE_STATUS";
+
     // Any other constant values that are used across multiple classes
     public static final int USB_BAUD_RATE = 115200;
 

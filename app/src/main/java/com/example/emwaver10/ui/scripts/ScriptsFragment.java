@@ -1,7 +1,9 @@
 package com.example.emwaver10.ui.scripts;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -22,6 +24,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import com.example.emwaver10.Constants;
+import com.example.emwaver10.MainActivity;
 import com.example.emwaver10.SerialService;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.CommandSender;
@@ -111,15 +114,19 @@ public class ScriptsFragment extends Fragment implements CommandSender {
             @Override
             public void onClick(View v) {
                 new Thread(() -> {
-
                     try {
                         String jsCode = binding.jsCodeInput.getText().toString();
                         ScriptsEngine scriptsEngine = new ScriptsEngine(cc1101, scriptsViewModel, serial, console, utils);
+                        serialService.changeStatus("Running script...");
                         String result = scriptsEngine.executeJavaScript(jsCode);
-                        if(result != null)
-                            sendExecutionResult(result);
+                        serialService.sendStringIntent("\n>", "user_input");
+                        if(result != null){
+                            serialService.sendStringIntent(result, "javascript");
+                            serialService.sendStringIntent("\n>", "user_input");
+                        }
                     } finally {
                         unbindServiceIfNeeded();
+                        serialService.changeStatus("");
                     }
                 }).start();
             }
@@ -130,17 +137,10 @@ public class ScriptsFragment extends Fragment implements CommandSender {
     }
 
 
-    private void sendExecutionResult(String message) {
-        Intent intent = new Intent(Constants.ACTION_USB_DATA_RECEIVED);
 
-        // Convert the message to bytes
-        String messageWithTags = "ERROR: " + message + "\n";
-        byte[] messageBytes = messageWithTags.getBytes();
 
-        intent.putExtra("data", messageBytes);
-        intent.putExtra("source", "javascript"); // Add this line; "system" is an example, replace with actual source
-        requireActivity().sendBroadcast(intent);
-    }
+
+
 
 
 

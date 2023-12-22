@@ -1,10 +1,15 @@
 package com.example.emwaver10;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.view.Menu;
 
 import com.example.emwaver10.ui.terminal.TerminalViewModel;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -36,6 +41,38 @@ public class MainActivity extends AppCompatActivity {
 
         Intent serviceIntent = new Intent(this, SerialService.class);
         startService(serviceIntent);
+
     }
+
+    private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(Constants.ACTION_UPDATE_STATUS)) {
+                String status = intent.getStringExtra("status");
+                updateActionBarStatus(status);
+            }
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter("com.example.UPDATE_STATUS");
+        registerReceiver(statusReceiver, filter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(statusReceiver);
+    }
+
+    public void updateActionBarStatus(String status) {
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setSubtitle(status); // Or use setTitle() if you prefer
+        }
+    }
+
 
 }

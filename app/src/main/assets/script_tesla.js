@@ -1,5 +1,6 @@
 
 function initTransmit() {
+    CC1101.spiStrobe(0x30);
     CC1101.sendInit();
     Console.print("check terminal\n");
 }
