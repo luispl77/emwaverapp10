@@ -44,6 +44,8 @@ public class SerialService extends Service implements SerialInputOutputManager.L
     public native boolean getRecordingContinuous();
     public native void setRecordingContinuous(boolean recording);
 
+    public native long [] findPulseEdges(int samplesPerSymbol, int errorTolerance, int maxLowPulseMultiplier);
+
 
     public class LocalBinder extends Binder {
         public SerialService getService() {

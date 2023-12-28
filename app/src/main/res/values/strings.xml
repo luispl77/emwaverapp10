@@ -9,6 +9,7 @@
     <string name="receive_tab">Receive</string>
     <string name="transmit_tab">Transmit</string>
     <string-array name="modulations">
+        <item>Select a modulation</item>
         <item>ASK</item>
         <item>FSK</item>
     </string-array>

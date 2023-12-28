@@ -29,6 +29,7 @@ import com.example.emwaver10.databinding.FragmentScriptsBinding;
 import com.example.emwaver10.jsobjects.CC1101;
 import com.example.emwaver10.ui.scripts.ScriptsViewModel;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.LimitLine;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
@@ -159,6 +160,11 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
             xAxis.setAxisMinimum(chartMinX); // Start at 0 microseconds
             xAxis.setAxisMaximum(chartMaxX);
             updateChart(compressDataAndGetDataSet(continuousmodeViewModel.getVisibleRangeStart(), continuousmodeViewModel.getVisibleRangeEnd(), 1000));
+        });
+
+
+        binding.showPulseEdgesButton.setOnClickListener(v -> {
+            toggleVerticalLinesOnChart(serialService.findPulseEdges(32, 10, 4));
         });
 
         initChart();
@@ -315,6 +321,26 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
         chart.notifyDataSetChanged();
         chart.invalidate();
     }
+
+    private void toggleVerticalLinesOnChart(long[] lineTimestamps) {
+        XAxis xAxis = chart.getXAxis();
+
+        if (!xAxis.getLimitLines().isEmpty()) {
+            xAxis.removeAllLimitLines();
+            Toast.makeText(getContext(), "Removed vertical lines", Toast.LENGTH_SHORT).show();
+        } else {
+            for (long timestamp : lineTimestamps) {
+                LimitLine line = new LimitLine(timestamp);
+                line.setLineColor(Color.RED);
+                line.setLineWidth(2f);
+                xAxis.addLimitLine(line);
+            }
+            Toast.makeText(getContext(), "Added " + lineTimestamps.length + " vertical lines", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
 
     private void unbindServiceIfNeeded() {
         if (isServiceBound && !isFragmentActive() && getActivity() != null) {

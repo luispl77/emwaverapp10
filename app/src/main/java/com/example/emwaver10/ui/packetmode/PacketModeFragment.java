@@ -18,7 +18,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -74,6 +76,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             }
             return null;
         };
+
 
         binding.sendTesla.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -241,6 +244,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
             }
         });
 
+
         String[] modulations = getResources().getStringArray(R.array.modulations);
         ArrayAdapter<String> modulationsAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, modulations);
         binding.modulationSelector.setAdapter(modulationsAdapter);
@@ -266,6 +270,7 @@ public class PacketModeFragment extends Fragment implements CommandSender {
                 }
             }).start();
         });
+
 
 
 

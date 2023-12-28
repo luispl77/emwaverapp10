@@ -4,11 +4,57 @@
 
 std::vector<char> dataBuffer;
 
-bool isRecording = true;
-
 bool isRecordingContinuous = false;
 
 extern "C" {
+
+// Define constants for HIGH and LOW states
+const char HIGH = 124;
+const char LOW = 48;
+
+JNIEXPORT jlongArray JNICALL Java_com_example_emwaver10_SerialService_findPulseEdges(
+        JNIEnv *env, jobject, jint samplesPerSymbol, jint errorTolerance, jint maxLowPulseMultiplier) {
+
+    std::vector<jlong> edges;
+    char lastState = dataBuffer[0];
+    jlong edgePosition = 0;
+    jlong lastEdgePosition = 0;
+
+    for (jlong i = 0; i < dataBuffer.size(); ++i) {
+        if (dataBuffer[i] != lastState) {
+            edgePosition = i;
+            jlong pulseLength = edgePosition - lastEdgePosition;
+
+            bool validPulse = false;
+            if (lastState == HIGH) {
+                jlong diff = std::abs(pulseLength - samplesPerSymbol);
+                validPulse = (diff <= errorTolerance || pulseLength % samplesPerSymbol <= errorTolerance);
+            } else if (lastState == LOW) {
+                validPulse = (pulseLength >= samplesPerSymbol &&
+                              pulseLength <= samplesPerSymbol * maxLowPulseMultiplier);
+            }
+
+            if (validPulse) {
+                edges.push_back(edgePosition);
+                lastState = dataBuffer[i];
+            }
+            lastEdgePosition = edgePosition;
+        }
+    }
+
+    // Convert std::vector<jlong> to jlongArray for return
+    jlongArray result = env->NewLongArray(edges.size());
+    env->SetLongArrayRegion(result, 0, edges.size(), edges.data());
+
+    return result;
+}
+
+
+
+
+
+
+
 
 
 JNIEXPORT void JNICALL Java_com_example_emwaver10_SerialService_setRecordingContinuous(JNIEnv *env, jobject, jboolean recording) {
