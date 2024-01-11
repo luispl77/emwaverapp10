@@ -343,28 +343,24 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
             }
         }
 
-        logBuffer(dataBuffer);
-        int packetSize = 75;
-        /*for (int i = 0; i < dataBuffer.length; i += packetSize) {
-            byte[] packet = Arrays.copyOfRange(dataBuffer, i, i + packetSize);
-            serialService.write(packet); // Write a 64-byte packet
 
-            delayMicroseconds(1000);
-        }*/
+        //logBuffer(dataBuffer);
+
+
+        int packetSize = 80;
         long startTime = System.nanoTime();
-
-        // Define the period in nanoseconds (1000 microseconds * 1000 nanoseconds/microsecond)
         final long period = 1000 * 1000;
-
-        // Loop through the dataBuffer and send packets every 1000us
         for (int i = 0; i < dataBuffer.length; i += packetSize) {
+            int bufferStatus = serialService.getBufferStatus(); // Get buffer status from STM32
+            int bufferLength = serialService.getBufferStatus(); // Get buffer status from STM32
+            if(bufferStatus == -1) Log.i("bufstatus", "not found" + "   buflen: " + serialService.getBufferLength());
+            else Log.i("bufstatus", "" + bufferStatus  + "   buflen: " + serialService.getBufferLength());
+            packetSize = adjustTransmissionRate(packetSize, bufferStatus);
             // Calculate the next time to send the packet
             startTime += period;
-
-            byte[] packet = Arrays.copyOfRange(dataBuffer, i, Math.min(i + packetSize, dataBuffer.length));
+            //byte[] packet = Arrays.copyOfRange(dataBuffer, i, Math.min(i + packetSize, dataBuffer.length));
+            byte[] packet = Arrays.copyOfRange(dataBuffer, i, i + packetSize);
             serialService.write(packet); // Write the packet
-
-            // Busy wait until the period has passed
             while (System.nanoTime() < startTime) {
                 // Busy wait
             }
@@ -372,36 +368,34 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
 
     }
 
-    private void transmitSSES() {
-        byte[] dataBuffer = new byte[1024];
-        Arrays.fill(dataBuffer, (byte) 's'); // Fill the buffer with 's' characters
+    private int adjustTransmissionRate(int currentPacketSize, int bufferStatus) {
+        final int targetBuffer = 384; // Target buffer level
+        final int bufferLowerThreshold = 100; // Lower threshold for more aggressive adjustment
+        final int bufferUpperThreshold = 200; // Upper threshold for standard adjustment
+        final int minPacketSize = 40;  // Minimum packet size
+        final int maxPacketSize = 160; // Maximum packet size
+        final double aggressiveAdjustmentFactor = 0.5; // Factor for aggressive adjustment
+        final double standardAdjustmentFactor = 0.2; // Factor for standard adjustment
 
-        for (int i = 0; i < dataBuffer.length; i += 64) {
-            byte[] packet = Arrays.copyOfRange(dataBuffer, i, i + 64);
-            serialService.write(packet); // Write a 64-byte packet
+        int bufferDiff = targetBuffer - bufferStatus;
+        double adjustmentFactor = (bufferStatus < targetBuffer - bufferLowerThreshold) ?
+                aggressiveAdjustmentFactor : standardAdjustmentFactor;
 
-            try {
-                Thread.sleep(2); // Delay of 2 ms between each write
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // Handle thread interruption
-            }
+        // Adjust only if the buffer status is outside the defined thresholds
+        if (Math.abs(bufferDiff) > (bufferStatus < targetBuffer - bufferLowerThreshold ?
+                bufferLowerThreshold : bufferUpperThreshold)) {
+            int sizeChange = (int) (bufferDiff * adjustmentFactor);
+            currentPacketSize += sizeChange;
+
+            // Clamp the packet size to min/max bounds
+            currentPacketSize = Math.max(minPacketSize, Math.min(maxPacketSize, currentPacketSize));
         }
+        return currentPacketSize;
     }
 
-    private void fillBufferWithPattern(byte[] buffer) {
-        int high = 124; // Value for high
-        int low = 48; // Value for low
-        int count = 1;
-        boolean isHigh = false;
 
-        for (int i = 0; i < buffer.length; ) {
-            for (int j = 0; j < count && i < buffer.length; j++, i++) {
-                buffer[i] = (byte) (isHigh ? high : low);
-            }
-            isHigh = !isHigh;
-            count = count == 32 ? 1 : count + 1;
-        }
-    }
+
+
     private void logBuffer(byte[] buffer) {
         StringBuilder sb = new StringBuilder();
         for (byte b : buffer) {

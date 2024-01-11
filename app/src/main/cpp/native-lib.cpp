@@ -115,6 +115,30 @@ JNIEXPORT jbyteArray JNICALL Java_com_example_emwaver10_SerialService_pollData(J
     return returnArray;
 }
 
+JNIEXPORT jint JNICALL Java_com_example_emwaver10_SerialService_getBufferStatus(JNIEnv *env, jobject) {
+    const int PACKET_SIZE = 64;
+    const int HEADER_SIZE = 2;
+    const std::string HEADER = "BS";
+
+    if (dataBuffer.size() >= PACKET_SIZE) {
+        // Get the last 64 bytes from the buffer
+        std::vector<char> lastPacket(dataBuffer.end() - PACKET_SIZE, dataBuffer.end());
+
+        // Check for the header
+        std::string packetHeader(lastPacket.begin(), lastPacket.begin() + HEADER_SIZE);
+        if (packetHeader == HEADER) {
+            // Parse the container size
+            uint16_t containerSize = (static_cast<uint8_t>(lastPacket[2]) << 8) | static_cast<uint8_t>(lastPacket[3]);
+            if(containerSize < 1000)
+            return static_cast<jint>(containerSize);
+        }
+    }
+
+    // Return a default value if the correct packet is not found
+    return -1;
+}
+
+
 
 JNIEXPORT jobjectArray JNICALL Java_com_example_emwaver10_SerialService_compressData(JNIEnv *env, jobject, jint rangeStart, jint rangeEnd, jint numberBins) {
     float totalPointsInRange = rangeEnd - rangeStart;

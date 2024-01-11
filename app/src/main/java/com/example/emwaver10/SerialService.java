@@ -46,6 +46,9 @@ public class SerialService extends Service implements SerialInputOutputManager.L
 
     public native long [] findPulseEdges(int samplesPerSymbol, int errorTolerance, int maxLowPulseMultiplier);
 
+    public native int getBufferStatus();
+
+
 
     public class LocalBinder extends Binder {
         public SerialService getService() {
@@ -66,6 +69,10 @@ public class SerialService extends Service implements SerialInputOutputManager.L
         else{
             Toast.makeText(this, "No devices found", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void read(byte [] buf){
+
     }
 
     public void emptyReadBuffer() {
