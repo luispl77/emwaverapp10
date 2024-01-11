@@ -41,6 +41,7 @@ import com.github.mikephil.charting.listener.OnChartGestureListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -126,10 +127,24 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
             }
         });
 
-        binding.getBufferLengthButton.setOnClickListener(v -> {
+        binding.retransmitButton.setOnClickListener(v -> {
             int bufferLength = serialService.getBufferLength();
             Toast.makeText(getContext(), "Buffer Length: " + bufferLength, Toast.LENGTH_SHORT).show();
-            //refreshChart();
+
+            String contCommand = "tran";
+            byte[] byteArray = contCommand.getBytes();
+            serialService.write(byteArray);
+
+
+
+            //transmitTestBuffer();
+            transmitTeslaBuffer();
+
+            contCommand = "ssss";
+            byteArray = contCommand.getBytes();
+            serialService.write(byteArray);
+
+            //transmitSSES();
         });
 
         binding.clearBufferButton.setOnClickListener(v -> {
@@ -251,6 +266,151 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
 
         return root;
     }
+
+    private void transmitTestBuffer() {
+        try {
+            Thread.sleep(100); // Delay of 1 ms between each write
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Handle thread interruption
+        }
+
+        byte[] dataBuffer = new byte[4096*2];
+        int dutySamples = 32;
+        //fillBufferWithPattern(dataBuffer);
+        for (int i = 0; i < dataBuffer.length; i += dutySamples) {
+            byte fillValue = (i / dutySamples) % 2 == 0 ? (byte) 124 : (byte) 48;
+            Arrays.fill(dataBuffer, i, i + dutySamples, fillValue);
+        }
+        logBuffer(dataBuffer); // Log the buffer content
+
+
+        int packetSize = 110; //80 bytes/ms, for 12.5us sample rate, 1 byte per sample
+        for (int i = 0; i < dataBuffer.length; i += packetSize) {
+            byte[] packet = Arrays.copyOfRange(dataBuffer, i, i + packetSize);
+            serialService.write(packet); // Write a 64-byte packet
+
+            delayMicroseconds(1000);
+            /*try {
+                Thread.sleep(1); // Delay of 1 ms between each write
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Handle thread interruption
+            }*/
+        }
+
+        /*byte[] packet = Arrays.copyOfRange(dataBuffer, 0, 32);
+        logBuffer(packet);
+        serialService.write(packet);*/
+    }
+
+    public void delayMicroseconds(long microseconds) {
+        long start = System.nanoTime();
+        long end = start + (microseconds * 1000); // Convert microseconds to nanoseconds
+        while (System.nanoTime() < end) {
+            // Busy wait
+        }
+    }
+
+    private void transmitTeslaBuffer(){
+
+        try {
+            Thread.sleep(100); // Delay of 1 ms between each write
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Handle thread interruption
+        }
+
+        byte [] teslaSignal = {(byte)0xAA, (byte)0xAA, (byte)0xAA, (byte)0x8A, (byte)0xCB, 50, -52, -52, -53, 77, 45, 74, -45, 76, -85, 75, 21, -106, 101, -103, -103, -106, -102, 90, -107, -90, -103, 86, -106, 43, 44, -53, 51, 51, 45, 52, -75, 43, 77, 50, -83, 40};
+        // Calculate the required buffer size (8 bits per byte * 32 bytes per bit)
+        int bytesPerBit = 32;
+        int bufferSize = teslaSignal.length * 8 * bytesPerBit;
+
+        // Initialize the data buffer
+        byte[] dataBuffer = new byte[bufferSize];
+
+        // Index to keep track of where we are in the dataBuffer
+        int dataBufferIndex = 0;
+
+        // Loop through each byte of the teslaSignal
+        for (byte teslaByte : teslaSignal) {
+            // Loop through each bit of the current byte (starting from the MSB)
+            for (int bitIndex = 7; bitIndex >= 0; bitIndex--) {
+                // Determine if the current bit is a 1 or 0
+                boolean isHigh = ((teslaByte >> bitIndex) & 1) == 1;
+
+                // Fill 40 bytes with the appropriate value (124 for high, 48 for low)
+                byte fillValue = isHigh ? (byte) 124 : (byte) 48;
+                Arrays.fill(dataBuffer, dataBufferIndex, dataBufferIndex + bytesPerBit, fillValue);
+                dataBufferIndex += bytesPerBit; // Move to the next slot in the data buffer
+            }
+        }
+
+        logBuffer(dataBuffer);
+        int packetSize = 75;
+        /*for (int i = 0; i < dataBuffer.length; i += packetSize) {
+            byte[] packet = Arrays.copyOfRange(dataBuffer, i, i + packetSize);
+            serialService.write(packet); // Write a 64-byte packet
+
+            delayMicroseconds(1000);
+        }*/
+        long startTime = System.nanoTime();
+
+        // Define the period in nanoseconds (1000 microseconds * 1000 nanoseconds/microsecond)
+        final long period = 1000 * 1000;
+
+        // Loop through the dataBuffer and send packets every 1000us
+        for (int i = 0; i < dataBuffer.length; i += packetSize) {
+            // Calculate the next time to send the packet
+            startTime += period;
+
+            byte[] packet = Arrays.copyOfRange(dataBuffer, i, Math.min(i + packetSize, dataBuffer.length));
+            serialService.write(packet); // Write the packet
+
+            // Busy wait until the period has passed
+            while (System.nanoTime() < startTime) {
+                // Busy wait
+            }
+        }
+
+    }
+
+    private void transmitSSES() {
+        byte[] dataBuffer = new byte[1024];
+        Arrays.fill(dataBuffer, (byte) 's'); // Fill the buffer with 's' characters
+
+        for (int i = 0; i < dataBuffer.length; i += 64) {
+            byte[] packet = Arrays.copyOfRange(dataBuffer, i, i + 64);
+            serialService.write(packet); // Write a 64-byte packet
+
+            try {
+                Thread.sleep(2); // Delay of 2 ms between each write
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // Handle thread interruption
+            }
+        }
+    }
+
+    private void fillBufferWithPattern(byte[] buffer) {
+        int high = 124; // Value for high
+        int low = 48; // Value for low
+        int count = 1;
+        boolean isHigh = false;
+
+        for (int i = 0; i < buffer.length; ) {
+            for (int j = 0; j < count && i < buffer.length; j++, i++) {
+                buffer[i] = (byte) (isHigh ? high : low);
+            }
+            isHigh = !isHigh;
+            count = count == 32 ? 1 : count + 1;
+        }
+    }
+    private void logBuffer(byte[] buffer) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : buffer) {
+            sb.append(b == 124 ? "1" : "0");
+        }
+        Log.i("BufferLog", sb.toString());
+    }
+
+
 
     public void initChart() {
         // Configure the chart (optional, based on your needs)
