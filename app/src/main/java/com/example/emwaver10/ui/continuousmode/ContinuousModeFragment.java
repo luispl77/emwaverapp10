@@ -355,7 +355,7 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
             int bufferLength = serialService.getBufferStatus(); // Get buffer status from STM32
             if(bufferStatus == -1) Log.i("bufstatus", "not found" + "   buflen: " + serialService.getBufferLength());
             else Log.i("bufstatus", "" + bufferStatus  + "   buflen: " + serialService.getBufferLength());
-            packetSize = adjustTransmissionRate(packetSize, bufferStatus);
+            packetSize = adjustTransmissionSimple(packetSize, bufferStatus);
             // Calculate the next time to send the packet
             startTime += period;
             //byte[] packet = Arrays.copyOfRange(dataBuffer, i, Math.min(i + packetSize, dataBuffer.length));
@@ -391,6 +391,19 @@ public class ContinuousModeFragment extends Fragment implements CommandSender {
             currentPacketSize = Math.max(minPacketSize, Math.min(maxPacketSize, currentPacketSize));
         }
         return currentPacketSize;
+    }
+
+    private int adjustTransmissionSimple(int currentPacketSize, int bufferStatus) {
+        final int targetBuffer = 384; // Target buffer level
+        final int bufferLowerThreshold = 100; // Lower threshold for more aggressive adjustment
+        final int bufferUpperThreshold = targetBuffer + (384-100); // Upper threshold for standard adjustment
+        if(bufferStatus < bufferLowerThreshold){
+            return 160;
+        }
+        else if(bufferStatus > bufferUpperThreshold){
+            return 40;
+        }
+        return 80;
     }
 
 
