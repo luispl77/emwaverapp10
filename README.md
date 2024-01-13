@@ -1,3 +1,6 @@
+# Repository is now finished for version 1.0 and OUTDATED. New Repo: luispl77/ismwaverapp
+
+
 # EMWaver Android App version 1.0
 This android app serves as communication interface to the CC1101 radio chip from Texas Instruments. 
 It allows to take advantage of most of the features of the packet engine that the radio chip provides.
